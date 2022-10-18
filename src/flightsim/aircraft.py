@@ -2,7 +2,7 @@ import sys
 import datetime
 import time
 import socket, struct, binascii, platform
-from src.aircraft.drefs import DREFs
+from .drefs import DREFs
 import numpy as np
 from colorama import Fore
 
