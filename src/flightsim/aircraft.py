@@ -30,7 +30,6 @@ class InvalidPacketSize(Exception):
         :param kargs: parameters for formatting.
         """
 
-        print(kwargs)
         super(InvalidPacketSize, self).__init__(self.args.format(**kwargs))
 
 
