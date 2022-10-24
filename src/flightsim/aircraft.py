@@ -1,3 +1,11 @@
+__author__ = "Alvaro Sierra Castro"
+__version__ = "1.0.0" # Using https://semver.org/ standard
+__maintainer__ = "Alvaro Sierra Castro"
+__credits__ = ["Andrea Da Ronch"]
+__email__ = "asc1g19@soton.ac.uk"
+__status__ = "Development"
+
+
 import sys
 import datetime
 import time
@@ -11,12 +19,26 @@ class XPlaneIpNotFound(Exception):
     args = "Could not find any running XPlane instance in network."
 
 
+class InvalidPacketSize(Exception):
+    args = "Packet size for {dref:s} is invalid. Size of data packet is {size:s} for a maximum of {max:s}"
+
+    def __init__(self, **kwargs):
+        """ Raise when too much data is being packet to send to X-Plane
+
+        Message format "Packet size for {dref:s} is invalid. Size of data packet is {size:s} for a maximum of {max:s}"
+
+        :param kargs: parameters for formatting.
+        """
+
+        super(InvalidPacketSize, self).__init__(self.args.format(**kwargs))
+
+
 class XPlaneTimeout(Exception):
-    args = "XPlane timeout."
+    args = "XPlane timeout"
 
 
 class XPlaneVersionNotSupported(Exception):
-    args = "XPlane version not supported."
+    args = "XPlane version not supported"
 
 
 # TODO: Be capable of storing variables in the PlyAircraft object that have not been created
@@ -26,26 +48,21 @@ class XPlaneVersionNotSupported(Exception):
 #  previous requests (This must be stored)
 # TODO: Plot multiple things on top of each other
 
-class PlyAircraft:
+class Simulator:
     # The following is where X-Plane constantly casts the information required for connection
     CAST_IP = "239.255.1.1"
     CAST_PORT = 49707
+    MAX_PACKET_SIZE = 509
 
     def __init__(self, freq=30):
-        super(PlyAircraft, self).__init__()
+        super(Simulator, self).__init__()
         self._run = False
-
-        with open('benchmark.csv', "w") as file:
-            file.truncate()
-            file.write('\n')
-
-        print("Creating aircraft")
 
         # Open a UDP Socket to receive on Port 49000
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(3.0)
 
-        self.findXplane()
+        self._find_xplane()
 
         # list of requested datarefs with index number
         self.datarefidx = 0
@@ -57,42 +74,42 @@ class PlyAircraft:
 
         self.start_time = datetime.datetime.now()
 
-    def _start(self):
-        self.set(DREFs.override_aero, True)
-        self.set(DREFs.override_torque, 1)
-        self._run = 1
-
-    def shut_down(self):
-        self.set(DREFs.override_aero, 0)
-        self.set(DREFs.override_aero, 0)
-        self._run = 0
+    # def _start(self):
+    #     self.set(DREFs.override_aero, True)
+    #     self.set(DREFs.override_torque, 1)
+    #     self._run = 1
+    #
+    # def shut_down(self):
+    #     self.set(DREFs.override_aero, 0)
+    #     self.set(DREFs.override_aero, 0)
+    #     self._run = 0
 
     def new(self, name, val=None):
         # TODO: Check if the variable already exists
         # TODO: Implement this as dictionary so they can be logged in separate file
         exec(f'self.{name} = {val}')
 
-    @property
-    def run(self):
-        """ This property acts like a boolean but using integers to allow for additional modes:
-        - 0 means aircraft is not running
-        - 1 means aircraft is running normally
-        - 2 means aircraft has crashed
-        """
-        return self._run
-
-    @run.setter
-    def run(self, value):
-        if self.run == 2:
-            print("Aircraft thread has crashed")
-
-        elif value == 1:
-            self._start()
-            self._run = 1
-
-        elif value == 0:
-            self.shut_down()
-            self._run = 0
+    # @property
+    # def run(self):
+    #     """ This property acts like a boolean but using integers to allow for additional modes:
+    #     - 0 means the connection is not running
+    #     - 1 means the connection is running normally
+    #     - 2 means the connection has crashed
+    #     """
+    #     return self._run
+    #
+    # @run.setter
+    # def run(self, value):
+    #     if self.run == 2:
+    #         print("Aircraft thread has crashed")
+    #
+    #     elif value == 1:
+    #         self._start()
+    #         self._run = 1
+    #
+    #     elif value == 0:
+    #         self.shut_down()
+    #         self._run = 0
 
     def get_all(self):
         out_dict = self.xplaneValues | self.my_vals
@@ -103,11 +120,11 @@ class PlyAircraft:
     def get(self, dref):
 
         if dref not in self.get_all().keys():
-            print(
-                Fore.YELLOW + f"It is the first time {dref} is requested and it was not initialized. We are initializing it for you.\nNext time remmember to initialize the required DREFs at the start")
-            print(Fore.YELLOW + "Note we will fetch all values to be able to return something")
-            print(Fore.YELLOW + "This may raise issues in data logging")
-            self.addFreqValue(dref, self.defaultFreq)
+            # print(
+            #     Fore.YELLOW + f"It is the first time {dref} is requested and it was not initialized. We are initializing it for you.\nNext time remmember to initialize the required DREFs at the start")
+            # print(Fore.YELLOW + "Note we will fetch all values to be able to return something")
+            # print(Fore.YELLOW + "This may raise issues in data logging")
+            self.add_freq_value(dref, self.defaultFreq)
             self.update()
 
         return self.get_all()[dref]
@@ -115,52 +132,46 @@ class PlyAircraft:
     def __del__(self):
         # Tell X-Plane to stop sending data
         for i in range(len(self.datarefs)):
-            self.addFreqValue(next(iter(self.datarefs.values())), freq=0)
+            self.add_freq_value(next(iter(self.datarefs.values())), freq=0)
         self.socket.close()
 
     def set(self, dataref, value):
-        '''
-        Write Dataref to XPlane
-        DREF0+(4byte byte value)+dref_path+0+spaces to complete the whole message to 509 bytes
-        DREF0+(4byte byte value of 1)+ sim/cockpit/switches/anti_ice_surf_heat_left+0+spaces to complete to 509 bytes
-        '''
+        """ Set a value on X-Plane.
+
+        See https://developer.x-plane.com/datarefs/ for available DREFs.
+
+
+        :param dataref: Data-ref of the variable to be set. Must be in the form of sim/operation/override/override_torque_forces
+        :param value: The value to set the dref to. Watch for datatypes.
+        :return:
+        """
 
         cmd = b"DREF"
         dataref = dataref + '\x00'
         string = dataref.encode('utf-8')
         message = "".encode()
-        if type(value) in [float, np.float64]:
-            message = struct.pack("=5sf500s", cmd, float(value), string)
-        elif type(value) == int:
-            message = struct.pack("=5sf500s", cmd, value, string)
-        elif type(value) == bool:
-            message = struct.pack("=5sf500s", cmd, int(value), string)
 
-        try:
-            assert (len(message) == 509)
+        message = struct.pack("=5sf500s", cmd, float(value), string)
+
+        # Check packet size
+        if len(message) == self.MAX_PACKET_SIZE:
+            raise InvalidPacketSize(dref=dataref, size=len(message), max=self.MAX_PACKET_SIZE)
+
+        else:
             self.socket.sendto(message, (self.conn["IP"], self.conn["Port"]))
-            with open('benchmark.csv', 'a') as file:
-                now = datetime.datetime.now()
-                current_time = now.strftime("%H:%M:%S.%f")
-                file.writelines(f"{current_time},{dataref},{value}\n")
-
-        except AssertionError:
-            print(Fore.RED + f"Assertion error on {dataref} with value {value} and datatype {type(value)}")
-            self.run = 2
 
         self.my_vals[dataref] = value
 
     def update(self):
         try:
             # Receive packet
-            data, addr = self.socket.recvfrom(
-                1472)  # maximum bytes of an RREF answer X-Plane will send (Ethernet MTU - IP hdr - UDP hdr)
+            data, addr = self.socket.recvfrom(1472)  # maximum bytes of an RREF answer X-Plane will send (Ethernet MTU - IP hdr - UDP hdr)
             # Decode Packet
             retvalues = {}
             # * Read the Header "RREFO".
             header = data[0:5]
             if (header != b"RREF,"):  # (was b"RREFO" for XPlane10)
-                print("Unknown packet recieved: ", binascii.hexlify(data))
+                print(Fore.YELLOW + "Unknown packet recieved: ", binascii.hexlify(data))
             else:
                 # * We get 8 bytes for every dataref sent:
                 #   An integer for idx and the float value.
@@ -180,12 +191,15 @@ class PlyAircraft:
             raise XPlaneTimeout
         return self.xplaneValues
 
-    def addFreqValue(self, dataref, freq=None):
+    def add_freq_value(self, dataref: str, freq: int=None) -> None:
+        """ Configure X-Plane to send the data-ref at a specific frequency. To update the data, Simulator.update() must be called
 
-        '''
-        Configure XPlane to send the dataref with a certain frequency.
-        You can disable a dataref by setting freq to 0.
-        '''
+        To disable a dataref set its frequency to 0.
+
+        :param dataref: Dataref of data we are interested in
+        :param freq: Frequency (in Hz) at which data is sent from the flight s`imulator to the additional app
+        :return: None
+        """
 
         idx = -9999
 
@@ -212,7 +226,7 @@ class PlyAircraft:
         if self.datarefidx % 100 == 0:
             time.sleep(0.2)
 
-    def findXplane(self):
+    def _find_xplane(self):
         '''
         Find the IP of XPlane Host in Network.
         It takes the first one it can find.
@@ -279,7 +293,6 @@ class PlyAircraft:
                     raise XPlaneVersionNotSupported()
 
         except socket.timeout:
-            print("XPlane IP not found.")
             raise XPlaneIpNotFound()
         finally:
             sock.close()
