@@ -1,3 +1,11 @@
+__author__ = "Alvaro Sierra Castro"
+__version__ = "1.0.0" # Using https://semver.org/ standard
+__maintainer__ = "Alvaro Sierra Castro"
+__credits__ = ["Andrea Da Ronch"]
+__email__ = "asc1g19@soton.ac.uk"
+__status__ = "Development"
+
+
 import sys
 import datetime
 import time
