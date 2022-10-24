@@ -10,6 +10,12 @@ from colorama import Fore
 class XPlaneIpNotFound(Exception):
     args = "Could not find any running XPlane instance in network."
 
+class InvalidPacketSize(Exception):
+    args = "Packetsize for %s is invalid. Size of data packet is %s for a maximum of %s"
+
+    def __init__(self, *args):
+        super(self.args.format(args))
+
 
 class XPlaneTimeout(Exception):
     args = "XPlane timeout."
@@ -39,13 +45,11 @@ class Simulator:
             file.truncate()
             file.write('\n')
 
-        print("Creating aircraft")
-
         # Open a UDP Socket to receive on Port 49000
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(3.0)
 
-        self._findXplane()
+        self._find_xplane()
 
         # list of requested datarefs with index number
         self.datarefidx = 0
@@ -103,11 +107,11 @@ class Simulator:
     def get(self, dref):
 
         if dref not in self.get_all().keys():
-            print(
-                Fore.YELLOW + f"It is the first time {dref} is requested and it was not initialized. We are initializing it for you.\nNext time remmember to initialize the required DREFs at the start")
-            print(Fore.YELLOW + "Note we will fetch all values to be able to return something")
-            print(Fore.YELLOW + "This may raise issues in data logging")
-            self.addFreqValue(dref, self.defaultFreq)
+            # print(
+            #     Fore.YELLOW + f"It is the first time {dref} is requested and it was not initialized. We are initializing it for you.\nNext time remmember to initialize the required DREFs at the start")
+            # print(Fore.YELLOW + "Note we will fetch all values to be able to return something")
+            # print(Fore.YELLOW + "This may raise issues in data logging")
+            self.add_freq_value(dref, self.defaultFreq)
             self.update()
 
         return self.get_all()[dref]
@@ -115,7 +119,7 @@ class Simulator:
     def __del__(self):
         # Tell X-Plane to stop sending data
         for i in range(len(self.datarefs)):
-            self.addFreqValue(next(iter(self.datarefs.values())), freq=0)
+            self.add_freq_value(next(iter(self.datarefs.values())), freq=0)
         self.socket.close()
 
     def set(self, dataref, value):
@@ -137,7 +141,9 @@ class Simulator:
             message = struct.pack("=5sf500s", cmd, int(value), string)
 
         try:
-            assert (len(message) == 509)
+            if len(message) == 509:
+                raise 
+
             self.socket.sendto(message, (self.conn["IP"], self.conn["Port"]))
             with open('benchmark.csv', 'a') as file:
                 now = datetime.datetime.now()
@@ -145,7 +151,7 @@ class Simulator:
                 file.writelines(f"{current_time},{dataref},{value}\n")
 
         except AssertionError:
-            print(Fore.RED + f"Assertion error on {dataref} with value {value} and datatype {type(value)}")
+            # print(Fore.RED + f"Assertion error on {dataref} with value {value} and datatype {type(value)}")
             self.run = 2
 
         self.my_vals[dataref] = value
@@ -160,7 +166,7 @@ class Simulator:
             # * Read the Header "RREFO".
             header = data[0:5]
             if (header != b"RREF,"):  # (was b"RREFO" for XPlane10)
-                print("Unknown packet recieved: ", binascii.hexlify(data))
+                print(Fore.YELLOW + "Unknown packet recieved: ", binascii.hexlify(data))
             else:
                 # * We get 8 bytes for every dataref sent:
                 #   An integer for idx and the float value.
@@ -180,13 +186,13 @@ class Simulator:
             raise XPlaneTimeout
         return self.xplaneValues
 
-    def addFreqValue(self, dataref: str, freq: int=None) -> None:
+    def add_freq_value(self, dataref: str, freq: int=None) -> None:
         """ Configure X-Plane to send the data-ref at a specific frequency. To update the data, Simulator.update() must be called
 
         To disable a dataref set its frequency to 0.
 
         :param dataref: Dataref of data we are interested in
-        :param freq: Frequency (in Hz) at which data is sent from the flight simulator to the additional app
+        :param freq: Frequency (in Hz) at which data is sent from the flight s`imulator to the additional app
         :return: None
         """
 
@@ -215,7 +221,7 @@ class Simulator:
         if self.datarefidx % 100 == 0:
             time.sleep(0.2)
 
-    def _findXplane(self):
+    def _find_xplane(self):
         '''
         Find the IP of XPlane Host in Network.
         It takes the first one it can find.
@@ -282,7 +288,6 @@ class Simulator:
                     raise XPlaneVersionNotSupported()
 
         except socket.timeout:
-            print("XPlane IP not found.")
             raise XPlaneIpNotFound()
         finally:
             sock.close()
