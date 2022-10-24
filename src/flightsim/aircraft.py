@@ -26,13 +26,13 @@ class XPlaneVersionNotSupported(Exception):
 #  previous requests (This must be stored)
 # TODO: Plot multiple things on top of each other
 
-class PlyAircraft:
+class Simulator:
     # The following is where X-Plane constantly casts the information required for connection
     CAST_IP = "239.255.1.1"
     CAST_PORT = 49707
 
     def __init__(self, freq=30):
-        super(PlyAircraft, self).__init__()
+        super(Simulator, self).__init__()
         self._run = False
 
         with open('benchmark.csv', "w") as file:
@@ -45,7 +45,7 @@ class PlyAircraft:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(3.0)
 
-        self.findXplane()
+        self._findXplane()
 
         # list of requested datarefs with index number
         self.datarefidx = 0
@@ -57,42 +57,42 @@ class PlyAircraft:
 
         self.start_time = datetime.datetime.now()
 
-    def _start(self):
-        self.set(DREFs.override_aero, True)
-        self.set(DREFs.override_torque, 1)
-        self._run = 1
-
-    def shut_down(self):
-        self.set(DREFs.override_aero, 0)
-        self.set(DREFs.override_aero, 0)
-        self._run = 0
+    # def _start(self):
+    #     self.set(DREFs.override_aero, True)
+    #     self.set(DREFs.override_torque, 1)
+    #     self._run = 1
+    #
+    # def shut_down(self):
+    #     self.set(DREFs.override_aero, 0)
+    #     self.set(DREFs.override_aero, 0)
+    #     self._run = 0
 
     def new(self, name, val=None):
         # TODO: Check if the variable already exists
         # TODO: Implement this as dictionary so they can be logged in separate file
         exec(f'self.{name} = {val}')
 
-    @property
-    def run(self):
-        """ This property acts like a boolean but using integers to allow for additional modes:
-        - 0 means aircraft is not running
-        - 1 means aircraft is running normally
-        - 2 means aircraft has crashed
-        """
-        return self._run
-
-    @run.setter
-    def run(self, value):
-        if self.run == 2:
-            print("Aircraft thread has crashed")
-
-        elif value == 1:
-            self._start()
-            self._run = 1
-
-        elif value == 0:
-            self.shut_down()
-            self._run = 0
+    # @property
+    # def run(self):
+    #     """ This property acts like a boolean but using integers to allow for additional modes:
+    #     - 0 means the connection is not running
+    #     - 1 means the connection is running normally
+    #     - 2 means the connection has crashed
+    #     """
+    #     return self._run
+    #
+    # @run.setter
+    # def run(self, value):
+    #     if self.run == 2:
+    #         print("Aircraft thread has crashed")
+    #
+    #     elif value == 1:
+    #         self._start()
+    #         self._run = 1
+    #
+    #     elif value == 0:
+    #         self.shut_down()
+    #         self._run = 0
 
     def get_all(self):
         out_dict = self.xplaneValues | self.my_vals
@@ -180,12 +180,15 @@ class PlyAircraft:
             raise XPlaneTimeout
         return self.xplaneValues
 
-    def addFreqValue(self, dataref, freq=None):
+    def addFreqValue(self, dataref: str, freq: int=None) -> None:
+        """ Configure X-Plane to send the data-ref at a specific frequency. To update the data, Simulator.update() must be called
 
-        '''
-        Configure XPlane to send the dataref with a certain frequency.
-        You can disable a dataref by setting freq to 0.
-        '''
+        To disable a dataref set its frequency to 0.
+
+        :param dataref: Dataref of data we are interested in
+        :param freq: Frequency (in Hz) at which data is sent from the flight simulator to the additional app
+        :return: None
+        """
 
         idx = -9999
 
@@ -212,7 +215,7 @@ class PlyAircraft:
         if self.datarefidx % 100 == 0:
             time.sleep(0.2)
 
-    def findXplane(self):
+    def _findXplane(self):
         '''
         Find the IP of XPlane Host in Network.
         It takes the first one it can find.

@@ -1,2 +1,2 @@
-from .aircraft import PlyAircraft
+from .aircraft import Simulator
 from .drefs import DREFs
