@@ -18,19 +18,28 @@ from colorama import Fore
 class XPlaneIpNotFound(Exception):
     args = "Could not find any running XPlane instance in network."
 
-class InvalidPacketSize(Exception):
-    args = "Packetsize for %s is invalid. Size of data packet is %s for a maximum of %s"
 
-    def __init__(self, *args):
-        super(self.args.format(args))
+class InvalidPacketSize(Exception):
+    args = "Packet size for {dref:s} is invalid. Size of data packet is {size:s} for a maximum of {max:s}"
+
+    def __init__(self, **kwargs):
+        """ Raise when too much data is being packet to send to X-Plane
+
+        Message format "Packet size for {dref:s} is invalid. Size of data packet is {size:s} for a maximum of {max:s}"
+
+        :param kargs: parameters for formatting.
+        """
+
+        print(kwargs)
+        super(InvalidPacketSize, self).__init__(self.args.format(**kwargs))
 
 
 class XPlaneTimeout(Exception):
-    args = "XPlane timeout."
+    args = "XPlane timeout"
 
 
 class XPlaneVersionNotSupported(Exception):
-    args = "XPlane version not supported."
+    args = "XPlane version not supported"
 
 
 # TODO: Be capable of storing variables in the PlyAircraft object that have not been created
@@ -44,6 +53,7 @@ class Simulator:
     # The following is where X-Plane constantly casts the information required for connection
     CAST_IP = "239.255.1.1"
     CAST_PORT = 49707
+    MAX_PACKET_SIZE = 509
 
     def __init__(self, freq=30):
         super(Simulator, self).__init__()
@@ -127,40 +137,36 @@ class Simulator:
         self.socket.close()
 
     def set(self, dataref, value):
-        '''
-        Write Dataref to XPlane
-        DREF0+(4byte byte value)+dref_path+0+spaces to complete the whole message to 509 bytes
-        DREF0+(4byte byte value of 1)+ sim/cockpit/switches/anti_ice_surf_heat_left+0+spaces to complete to 509 bytes
-        '''
+        """ Set a value on X-Plane.
+
+        See https://developer.x-plane.com/datarefs/ for available DREFs.
+
+
+        :param dataref: Data-ref of the variable to be set. Must be in the form of sim/operation/override/override_torque_forces
+        :param value: The value to set the dref to. Watch for datatypes.
+        :return:
+        """
 
         cmd = b"DREF"
         dataref = dataref + '\x00'
         string = dataref.encode('utf-8')
         message = "".encode()
-        if type(value) in [float, np.float64]:
-            message = struct.pack("=5sf500s", cmd, float(value), string)
-        elif type(value) == int:
-            message = struct.pack("=5sf500s", cmd, value, string)
-        elif type(value) == bool:
-            message = struct.pack("=5sf500s", cmd, int(value), string)
 
-        try:
-            if len(message) == 509:
-                raise 
+        message = struct.pack("=5sf500s", cmd, float(value), string)
 
+        # Check packet size
+        if len(message) == self.MAX_PACKET_SIZE:
+            raise InvalidPacketSize(dref=dataref, size=len(message), max=self.MAX_PACKET_SIZE)
+
+        else:
             self.socket.sendto(message, (self.conn["IP"], self.conn["Port"]))
-
-        except AssertionError:
-            # print(Fore.RED + f"Assertion error on {dataref} with value {value} and datatype {type(value)}")
-            self.run = 2
 
         self.my_vals[dataref] = value
 
     def update(self):
         try:
             # Receive packet
-            data, addr = self.socket.recvfrom(
-                1472)  # maximum bytes of an RREF answer X-Plane will send (Ethernet MTU - IP hdr - UDP hdr)
+            data, addr = self.socket.recvfrom(1472)  # maximum bytes of an RREF answer X-Plane will send (Ethernet MTU - IP hdr - UDP hdr)
             # Decode Packet
             retvalues = {}
             # * Read the Header "RREFO".
