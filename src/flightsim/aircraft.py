@@ -41,10 +41,6 @@ class Simulator:
         super(Simulator, self).__init__()
         self._run = False
 
-        with open('benchmark.csv', "w") as file:
-            file.truncate()
-            file.write('\n')
-
         # Open a UDP Socket to receive on Port 49000
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(3.0)
@@ -145,10 +141,6 @@ class Simulator:
                 raise 
 
             self.socket.sendto(message, (self.conn["IP"], self.conn["Port"]))
-            with open('benchmark.csv', 'a') as file:
-                now = datetime.datetime.now()
-                current_time = now.strftime("%H:%M:%S.%f")
-                file.writelines(f"{current_time},{dataref},{value}\n")
 
         except AssertionError:
             # print(Fore.RED + f"Assertion error on {dataref} with value {value} and datatype {type(value)}")
