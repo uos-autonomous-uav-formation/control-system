@@ -54,7 +54,7 @@ class Simulator:
     CAST_PORT = 49707
     MAX_PACKET_SIZE = 509
 
-    def __init__(self, freq=30):
+    def __init__(self, freq=30, overrides=[]):
         super(Simulator, self).__init__()
         self._run = False
 
@@ -62,15 +62,15 @@ class Simulator:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(3.0)
 
-        self._find_xplane()
-
-        # list of requested datarefs with index number
+        # list of requested data-refs with index number
         self.datarefidx = 0
         self.datarefs = {}
         self.my_vals = {}
         # values from xplane
         self.xplaneValues = {}
         self.defaultFreq = 30
+
+        self._find_xplane()
 
         self.start_time = datetime.datetime.now()
 
@@ -113,7 +113,7 @@ class Simulator:
 
     def get_all(self):
         out_dict = self.xplaneValues | self.my_vals
-        out_dict['running'] = self.run
+        # out_dict['running'] = self.run
 
         return out_dict
 
@@ -249,7 +249,7 @@ class Simulator:
         try:
             packet, sender = sock.recvfrom(1472)
             print("XPlane Beacon: ", packet.hex())
-
+    
             # decode data
             # * Header
             header = packet[0:5]
