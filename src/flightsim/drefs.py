@@ -22,4 +22,6 @@ class DREFs:
     right_aileron = 'sim/flightmodel/controls/rail1def'
     left_aileron = 'sim/flightmodel/controls/lail1def'
     elevator_angle = 'sim/flightmodel/controls/elev1_def'
+    lat = "sim/flightmodel/position/latitude"
+    long = "sim/flightmodel/position/longitude"
 
