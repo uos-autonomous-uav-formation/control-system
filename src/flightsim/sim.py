@@ -20,7 +20,7 @@ class XPlaneIpNotFound(Exception):
 
 
 class InvalidPacketSize(Exception):
-    args = "Packet size for {dref:s} is invalid. Size of data packet is {size:s} for a maximum of {max:s}"
+    args = "Packet size for {dref} is invalid. Size of data packet is {size} for a maximum of {max}"
 
     def __init__(self, **kwargs):
         """ Raise when too much data is being packet to send to X-Plane
