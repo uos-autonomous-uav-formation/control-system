@@ -158,7 +158,7 @@ class Simulator:
         message = struct.pack("=5sf500s", cmd, float(value), string)
 
         # Check packet size
-        if len(message) == self.MAX_PACKET_SIZE:
+        if len(message) > self.MAX_PACKET_SIZE:
             raise InvalidPacketSize(dref=dataref, size=len(message), max=self.MAX_PACKET_SIZE)
 
         else:
