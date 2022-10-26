@@ -1,5 +1,5 @@
 __author__ = "Alvaro Sierra Castro"
-__version__ = "1.0.0" # Using https://semver.org/ standard
+__version__ = "1.0.1" # Using https://semver.org/ standard
 __maintainer__ = "Alvaro Sierra Castro"
 __credits__ = ["Andrea Da Ronch"]
 __email__ = "asc1g19@soton.ac.uk"
@@ -134,6 +134,10 @@ class Simulator:
         for i in range(len(self.datarefs)):
             self.add_freq_value(next(iter(self.datarefs.values())), freq=0)
         self.socket.close()
+
+    def is_dref_recieved(self, dref: str) -> bool:
+        return dref in self.datarefs.keys()
+
 
     def set(self, dataref, value):
         """ Set a value on X-Plane.
