@@ -1,0 +1,1 @@
+from .gpsmodel import GPSError
