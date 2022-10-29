@@ -1,14 +1,13 @@
 from src.flightsim import Simulator, DREFs
 import time
+from src.gpsmodel import GPSError
 
 sim = Simulator()
 
-sim.add_freq_value(DREFs.lat)
-sim.add_freq_value(DREFs.long)
+a, b = GPSError(sim)
 
+print(a)
+print(b)
 
-sim.update()
-
-print(sim.get(DREFs.lat), sim.get(DREFs.long))
-
-
+sim.set(DREFs.lat, a)
+sim.set(DREFs.long, b)
