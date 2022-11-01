@@ -24,4 +24,36 @@ class DREFs:
     elevator_angle = 'sim/flightmodel/controls/elev1_def'
     lat = "sim/flightmodel/position/latitude"
     long = "sim/flightmodel/position/longitude"
+    alt = "sim/flightmodel/position/elevation"  # elevation above MSL
+
+    class grafics:
+        openglref_lat: str = "sim/flightmodel/position/lat_ref"
+        openglref_lon: str = "sim/flightmodel/position/lon_ref"
+        opengl_x: str = "sim/flightmodel/position/local_x"
+        opengl_y: str = "sim/flightmodel/position/local_y"
+        opengl_z: str = "sim/flightmodel/position/local_z"
+        opengl_vx: str = "sim/flightmodel/position/local_vx"
+        opengl_vy: str = "sim/flightmodel/position/local_vy"
+        opengl_vz: str = "sim/flightmodel/position/local_vz"
+        opengl_roll: str = "sim/flightmodel/position/phi"
+        oglpith: str = "sim/flightmodel/position/theta"  # True pitch
+        oglhdg: str = "sim/flightmodel/position/psi"  # OpenGL heading
+
+    class multiplayer:
+        """
+        Up to 19 multiplayer aircraft can be generated using DREFs.
+
+        To avoid having a string for each aircraft, formatting is taken advantage off. To modify DREF for a aircraft
+        with id i use:
+
+        ```multiplayer.[DREF].format(i)```
+        """
+        pos_x: str = "sim/multiplayer/position/plane{0}_x"
+        pos_y: str = "sim/multiplayer/position/plane{0}_y"
+        pos_z: str = "sim/multiplayer/position/plane{0}_z"
+        pitch: str = "sim/multiplayer/position/plane{0}_the"
+        roll: str = "sim/multiplayer/position/plane{0}_phi"
+        hdg: str = "sim/multiplayer/position/plane{0}_psi"
+        auto_alt: str = "sim/multiplayer/autopilot/altitude[{0}]"
+        auto_spd: str = ""
 
