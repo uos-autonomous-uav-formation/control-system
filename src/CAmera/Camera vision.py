@@ -26,6 +26,4 @@ def grabscreen():
        return False
     return True
 
-while True:
-    if grabscreen():
-        exit(1)
+
