@@ -43,3 +43,4 @@ def GPSError(sim: Simulator) -> (float, float):
     lat_error = float(str(lat_Xplane_3dp) + str(lat_new_l2d))
     long_error = float(str(long_Xplane_3dp) + str(long_new_l2d))
     return lat_error, long_error
+
