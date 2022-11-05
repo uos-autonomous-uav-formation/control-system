@@ -2,7 +2,8 @@ import cv2
 import matplotlib.pyplot as plt
 
 
-def object_identify_pic(img):
+def object_identify_pic(img_name):
+    img = cv2.imread(img_name)
     confidence = 0.65
     classNames = []
     classFile = 'coco.names'
@@ -29,5 +30,4 @@ def object_identify_pic(img):
     cv2.imshow("Tracking", img)
     cv2.waitKey(0)
 
-
-
+object_identify_pic("x1.jpg.png")

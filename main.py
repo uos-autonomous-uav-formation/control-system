@@ -1,13 +1,9 @@
-from src.flightsim import Simulator, DREFs
-import time
-from src.gpsmodel import GPSError
+from src.computer_vision import object_detection
+from src.computer_vision import CameraVision_computer
 
-sim = Simulator()
+grabscreenlive()
 
-a, b = GPSError(sim)
 
-print(a)
-print(b)
 
-sim.set(DREFs.lat, a)
-sim.set(DREFs.long, b)
+
+
