@@ -1,14 +1,8 @@
-from src.flightsim import Simulator, DREFs
-import time
+from src.flightsim import *
 
 sim = Simulator()
 
-sim.add_freq_value(DREFs.lat)
-sim.add_freq_value(DREFs.long)
+DEBUG = []
 
-
-sim.update()
-
-print(sim.get(DREFs.lat), sim.get(DREFs.long))
-
-
+# while True:
+cone_leadergen(sim, 1).load_leader(y_delta=0)

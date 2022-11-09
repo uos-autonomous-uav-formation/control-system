@@ -25,7 +25,9 @@ class DREFs:
     lat = "sim/flightmodel/position/latitude"
     long = "sim/flightmodel/position/longitude"
     alt = "sim/flightmodel/position/elevation"  # elevation above MSL
-    cs_roll = "sim/joystick"
+    cs_roll = "sim/joystick/yolk_roll_ratio"
+    cs_hdg = "sim/joystick/yolk_heading_ratio"
+    cs_pitch = "sim/joystick/yolk_pitch_ratio"
 
     class grafics:
         openglref_lat: str = "sim/flightmodel/position/lat_ref"
@@ -61,7 +63,7 @@ class DREFs:
         opengl_roll: str = "sim/multiplayer/position/plane{0}_phi"
         opengl_hdg: str = "sim/multiplayer/position/plane{0}_psi"
         flap: str = "sim/multiplayer/controls/flap_request[{0}]"
-        # cs_pitch: str = "sim/multiplayer/position/plane{0}_yolk_pitch"
-        # cs_roll: str = "sim/multiplayer/position/plane{0}_yolk_roll"
-        # cs_yaw: str = "sim/multiplayer/position/plane{0}_yolk_yaw"
+        cs_pitch: str = "sim/multiplayer/controls/yoke_pitch_ratio[{0}]"
+        cs_roll: str = "sim/multiplayer/controls/yoke_roll_ratio[{0}]"
+        cs_hdg: str = "sim/multiplayer/controls/yoke_heading_ratio[{0}]"
 
