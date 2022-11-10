@@ -52,7 +52,8 @@ class DREFs:
         ```multiplayer.[DREF].format(i)```
         """
         lon = "sim/multiplayer/position/plane1_lon"
-        lat = "sim/multiplayer/position"
+        lat = "sim/multiplayer/position/plane1_lat"
+        elev = "sim/multiplayer/position/plane1_el"
         opengl_x: str = "sim/multiplayer/position/plane{0}_x"
         opengl_vx: str = "sim/multiplayer/position/plane{0}_v_x"
         opengl_y: str = "sim/multiplayer/position/plane{0}_y"
@@ -66,4 +67,6 @@ class DREFs:
         cs_pitch: str = "sim/multiplayer/controls/yoke_pitch_ratio[{0}]"
         cs_roll: str = "sim/multiplayer/controls/yoke_roll_ratio[{0}]"
         cs_hdg: str = "sim/multiplayer/controls/yoke_heading_ratio[{0}]"
+        engine_throttle = "sim/multiplayer/controls/engine_throttle_request[{0}]"
+        engine_mixture = "sim/multiplayer/controls/engine_mixture_request[{0}]"
 

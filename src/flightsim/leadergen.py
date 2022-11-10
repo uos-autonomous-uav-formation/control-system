@@ -6,7 +6,7 @@ __email__ = "asc1g19@soton.ac.uk"
 __status__ = "Prototyping"
 
 from dataclasses import dataclass
-from . import Simulator, DREFs
+from . import Simulator, DREFs, MultiplayerControl
 
 
 @dataclass(init=True)
@@ -42,11 +42,12 @@ class _Loader:
         self._get_flw_pos()
 
     def load_leader(self, y_delta: float = 0):
-        self._gen_leader(self._flw, 3000, y_delta)
+        self._gen_leader(self._flw, y_delta)
+        self._create_multiplayer_control(self._flw)
 
-    def _gen_leader(self, aircraft: _aircraft, alt: float, y_delta) -> None:
+    def _gen_leader(self, aircraft: _aircraft, y_delta) -> None:
         # Y is height, Z is north, X is east (units not the same)
-        self._sim.set("sim/operation/override/override_autopilot[1]", True)
+        self._sim.set(f"sim/operation/override/override_autopilot[{self._ldr_id}]", True)
 
         self._sim.set(DREFs.multiplayer.opengl_hdg.format(self._ldr_id), aircraft.hdg)
         self._sim.set(DREFs.multiplayer.opengl_pitch.format(self._ldr_id), aircraft.pitch)
@@ -63,6 +64,10 @@ class _Loader:
 
         self._sim.set(DREFs.multiplayer.flap.format(self._ldr_id + 1), 0)
 
+    def _create_multiplayer_control(self, target_hdg):
+        self.controller = MultiplayerControl(self._sim, self._ldr_id, target_hdg)
+        self.controller.join()
+
 
     @property
     def _sim(self):
@@ -76,13 +81,12 @@ class _Loader:
 
         req = [DREFs.grafics.opengl_x, DREFs.grafics.opengl_y, DREFs.grafics.opengl_z, DREFs.grafics.opengl_hdg,
                DREFs.grafics.opengl_pitch, DREFs.cs_pitch, DREFs.cs_roll, DREFs.cs_hdg,
-               DREFs.grafics.opengl_vx, DREFs.grafics.opengl_vy, DREFs.grafics.opengl_vy]
+               DREFs.grafics.opengl_vx, DREFs.grafics.opengl_vy, DREFs.grafics.opengl_vz]
         to_flush = []
         for i in req:
             if not self._sim.is_dref_recieved(i):
                 to_flush.append(i)
                 self._sim.add_freq_value(i, 1)
-
 
         self._sim.update()
 
@@ -100,8 +104,8 @@ class _Loader:
                               cs_hdg=self._sim.get(DREFs.cs_hdg))
 
         # Flush the DREFs we initialised (we only need them once)
-        for i in to_flush:
-            self._sim.add_freq_value(i, 0)
+        # for i in to_flush:
+        #     self._sim.add_freq_value(i, 0)
 
 
 class Cone(_Loader):
