@@ -5,7 +5,11 @@ __credits__ = []
 __email__ = "asc1g19@soton.ac.uk"
 __status__ = "Prototyping"
 
+import copy
 from dataclasses import dataclass
+import random
+import numpy as np
+from matplotlib import pyplot as plt
 from . import Simulator, DREFs, MultiplayerControl
 
 
@@ -42,7 +46,7 @@ class _Loader:
         self._get_flw_pos()
 
     def load_leader(self, y_delta: float = 0):
-        self._gen_leader(self._flw, y_delta)
+        self._gen_leader(self._get_lead_pos(), y_delta)
         self._create_multiplayer_control(self._flw)
 
     def _gen_leader(self, aircraft: _aircraft, y_delta) -> None:
@@ -104,8 +108,11 @@ class _Loader:
                               cs_hdg=self._sim.get(DREFs.cs_hdg))
 
         # Flush the DREFs we initialised (we only need them once)
-        # for i in to_flush:
-        #     self._sim.add_freq_value(i, 0)
+        for i in to_flush:
+            self._sim.add_freq_value(i, 0)
+
+    def _get_lead_pos(self):
+        return self._flw
 
 
 class Cone(_Loader):
@@ -113,4 +120,12 @@ class Cone(_Loader):
     _min: float
 
     def _get_lead_pos(self):
-        pass
+        angle = random.uniform(-0.7, 0.7)
+        dist = random.randint(0, 100)
+        leader = copy.copy(self._flw)
+
+        leader.y = self._flw.y + random.randint(-10, 100)
+        leader.x = self._flw.x + dist * (self._flw.vx * np.cos(angle) - self._flw.vz * np.sin(angle))
+        leader.z = self._flw.z + dist * (self._flw.vx * np.sin(angle) + self._flw.vz * np.cos(angle))
+
+        return leader
