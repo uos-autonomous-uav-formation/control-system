@@ -9,7 +9,7 @@ import copy
 from dataclasses import dataclass
 import random
 import numpy as np
-from matplotlib import pyplot as plt
+from threading import Thread
 from . import Simulator, DREFs, MultiplayerControl
 
 
@@ -33,23 +33,35 @@ class _aircraft:
 
 
 class _Loader:
+    """
+    Backbone of all the position generation for leader aircraft
+    """
+
     _simv: Simulator = None
 
     # TODO: Handle this arcraft data not being filled in (and either generate or raise error)
     _flw: _aircraft = None
     _ldr_id: int = None
+    _args = dict = {}
 
-    def __init__(self, simulator: Simulator, acft_id: int):
+    def __init__(self, simulator: Simulator, acft_id: int, **kwargs):
         self._simv = simulator
         self._ldr_id = acft_id
+        self._args = kwargs
 
         self._get_flw_pos()
 
-    def load_leader(self, y_delta: float = 0):
-        self._gen_leader(self._get_lead_pos(), y_delta)
-        self._create_multiplayer_control(self._flw)
+    def load_leader(self, y_delta: float = 0) -> Thread:
+        """ Load the leader and bind a control system to it
 
-    def _gen_leader(self, aircraft: _aircraft, y_delta) -> None:
+        :rtype: Thread
+        :return: Thread running the control of the leader aircraft. Call Thread.join() at the end of
+        the code so the main thread waits for this one to *never* finish
+        """
+        self._gen_leader(self._get_lead_pos())
+        return self._create_multiplayer_control(self._flw)
+
+    def _gen_leader(self, aircraft: _aircraft) -> None:
         # Y is height, Z is north, X is east (units not the same)
         self._sim.set(f"sim/operation/override/override_autopilot[{self._ldr_id}]", True)
 
@@ -60,7 +72,7 @@ class _Loader:
         self._sim.set(DREFs.multiplayer.opengl_vy.format(self._ldr_id), aircraft.vy)
         self._sim.set(DREFs.multiplayer.opengl_vz.format(self._ldr_id), aircraft.vz)
         self._sim.set(DREFs.multiplayer.opengl_x.format(self._ldr_id), aircraft.x)
-        self._sim.set(DREFs.multiplayer.opengl_y.format(self._ldr_id), aircraft.y + y_delta)
+        self._sim.set(DREFs.multiplayer.opengl_y.format(self._ldr_id), aircraft.y)
         self._sim.set(DREFs.multiplayer.opengl_z.format(self._ldr_id), aircraft.z)
         self._sim.set(DREFs.multiplayer.cs_pitch.format(self._ldr_id), aircraft.cs_pitch)
         self._sim.set(DREFs.multiplayer.cs_roll.format(self._ldr_id), aircraft.cs_roll)
@@ -68,10 +80,9 @@ class _Loader:
 
         self._sim.set(DREFs.multiplayer.flap.format(self._ldr_id + 1), 0)
 
-    def _create_multiplayer_control(self, target_hdg):
+    def _create_multiplayer_control(self, target_hdg) -> Thread:
         self.controller = MultiplayerControl(self._sim, self._ldr_id, target_hdg)
-        self.controller.join()
-
+        return self.controller
 
     @property
     def _sim(self):
@@ -116,12 +127,30 @@ class _Loader:
 
 
 class Cone(_Loader):
-    _max: float
-    _min: float
+
+    def __init__(self, simulator: Simulator, acft_id: int, **kwargs):
+        """
+        Generate the leader around a cone shape
+
+        :param simulator: Simulator object to send data and recieve from X-Plane
+        :type simulator: Simulator
+        :param acft_id:
+        :type acft_id: int
+        :key max_distance: maximum distance (in opengl coordinates) to spawn the aircraft at
+        :type max_distance: int
+        :key min_distance: minimum distance (in opengl coordinates) to spawn the aircarft at
+        :type min_distance: int
+        :key angle: maximum range angle in radians to generate the aircrat for (defaults to 0.7). This will aply in a +- range for that single value
+        :type angle: float
+        """
+        super(Cone, self).__init__(simulator, acft_id, **kwargs)
 
     def _get_lead_pos(self):
-        angle = random.uniform(-0.7, 0.7)
-        dist = random.randint(0, 100)
+        angle = 0.7 if "angle" not in self._args.keys() else self._args["angle"]
+
+        angle = random.uniform(-angle, angle)
+        dist = random.randint(10 if "min_distance" not in self._args.keys() else self._args["min_distance"],
+                              100 if "max_distance" not in self._args.keys() else self._args["max_distance"])
         leader = copy.copy(self._flw)
 
         leader.y = self._flw.y + random.randint(-10, 100)
