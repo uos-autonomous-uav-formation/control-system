@@ -132,9 +132,9 @@ class Cone(_Loader):
         """
         Generate the leader around a cone shape
 
-        :param simulator: Simulator object to send data and recieve from X-Plane
+        :param simulator: Simulator object to send data and recieve from X-Plane. If None we will generate the simulator
         :type simulator: Simulator
-        :param acft_id:
+        :param acft_id: ID of multiplayer aircraft to use (typically 1)
         :type acft_id: int
         :key max_distance: maximum distance (in opengl coordinates) to spawn the aircraft at
         :type max_distance: int
