@@ -55,7 +55,7 @@ class MultiplayerControl(Thread):
 
         self._controller_alt = _PID(-1, 0, 0, 0)
         self._controller_roll = _PID(-1, 0, 0, 0)
-        self._controller_pitch = _PID(-1, 0, 0, 0)
+        self._controller_pitch = _PID(-1, 0.3, 0, 0)
         self._controller_yaw = _PID(-1, 0, 0, 0)
         self._sim.add_freq_value(DREFs.multiplayer.elev.format(self.id), 60)
         self._sim.add_freq_value(DREFs.multiplayer.opengl_roll.format(self.id), 60)
@@ -80,8 +80,6 @@ class MultiplayerControl(Thread):
             current_roll = self._sim.get(DREFs.multiplayer.opengl_roll.format(self.id))
             current_hdg = self._sim.get(DREFs.multiplayer.opengl_hdg.format(self.id))
             current_pitch = self._sim.get(DREFs.multiplayer.opengl_pitch.format(self.id))
-
-            print(f"{current_pitch=}, {current_hdg=}, {current_roll=}")
 
             self._sim.set(DREFs.multiplayer.opengl_vx.format(self.id), vx)
             self._sim.set(DREFs.multiplayer.opengl_vy.format(self.id), self._controller_alt.controller(new_alt))
