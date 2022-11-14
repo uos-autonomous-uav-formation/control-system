@@ -69,7 +69,8 @@ def objectdetection_video(videoname):
 
 
 def imageobject(imagename):
-    #net = cv2.dnn.readNet('yolov3.weights', 'yolo3.cfg')
+    #net = cv2.dnn.readNet('yolov3.cfg', 'yolo3.weights')
+    #net = cv2.dnn.readNet('yolov3-tiny_training_last.weights','yolo3-tiny_testing.cfg')
     net = cv2.dnn.readNetFromDarknet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
 
     classes = []
@@ -124,5 +125,67 @@ def imageobject(imagename):
     cv2.destroyAllWindows()
 
 
+def testing(imagename):
+    #net = cv2.dnn.readNet('yolov3.cfg', 'yolo3.weights')
+    #net = cv2.dnn.readNet('yolov3-tiny_testing.cfg','yolov3-tiny_training_last.weights')
+    net = cv2.dnn.readNet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
+    #net = cv2.dnn.readNet('yolov4-tiny-custom.cfg', 'yolov4-tiny-custom_best.weights')
 
-imageobject('14.JPG')
+    classes = []
+    with open("coco.names.txt", "r") as f:
+        classes = f.read().splitlines()
+
+    img = cv2.imread(imagename)
+    height, width, _ = img.shape
+
+    blob = cv2.dnn.blobFromImage(img, 1 / 255, (416, 416), (0, 0, 0), swapRB=True, crop=False)
+
+    net.setInput(blob)
+    output_layers_names = net.getUnconnectedOutLayersNames()
+    layerOutputs = net.forward(output_layers_names)
+
+    boxes = []
+    confidences = []
+    class_ids = []
+
+    for output in layerOutputs:
+        for detection in output:
+            scores = detection[5:]
+            class_id = np.argmax(scores)
+            confidence = scores[class_id]
+            if confidence > 0.1 and class_id == 4:
+                center_x = int(detection[0] * width)
+                center_y = int(detection[1] * height)
+                w = int(detection[2] * width)
+                h = int(detection[3] * height)
+
+                x = int(center_x - w / 2)
+                y = int(center_y - h / 2)
+
+                boxes.append([x, y, w, h])
+                confidences.append((float(confidence)))
+                class_ids.append(class_id)
+
+    indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.1, 0.4)
+
+    font = cv2.FONT_HERSHEY_PLAIN
+
+    if len(indexes) > 0:
+        for i in indexes.flatten():
+            x, y, w, h = boxes[i]
+            label = str(classes[class_ids[i]])
+            confidence = str(round(confidences[i], 2))
+            color = (0, 255, 0)  # colors[i]
+            cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
+            cv2.putText(img, label + " " + confidence, (x, y + 20), font, 2, (255, 255, 255), 2)
+
+        cv2.imshow('Image', img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+
+
+
+
+
+testing('1.jpg')
