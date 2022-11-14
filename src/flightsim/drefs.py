@@ -24,4 +24,49 @@ class DREFs:
     elevator_angle = 'sim/flightmodel/controls/elev1_def'
     lat = "sim/flightmodel/position/latitude"
     long = "sim/flightmodel/position/longitude"
+    alt = "sim/flightmodel/position/elevation"  # elevation above MSL
+    cs_roll = "sim/joystick/yolk_roll_ratio"
+    cs_hdg = "sim/joystick/yolk_heading_ratio"
+    cs_pitch = "sim/joystick/yolk_pitch_ratio"
+
+    class grafics:
+        openglref_lat: str = "sim/flightmodel/position/lat_ref"
+        openglref_lon: str = "sim/flightmodel/position/lon_ref"
+        opengl_x: str = "sim/flightmodel/position/local_x"
+        opengl_y: str = "sim/flightmodel/position/local_y"
+        opengl_z: str = "sim/flightmodel/position/local_z"
+        opengl_vx: str = "sim/flightmodel/position/local_vx"
+        opengl_vy: str = "sim/flightmodel/position/local_vy"
+        opengl_vz: str = "sim/flightmodel/position/local_vz"
+        opengl_roll: str = "sim/flightmodel/position/phi"
+        opengl_pitch: str = "sim/flightmodel/position/theta"  # True pitch
+        opengl_hdg: str = "sim/flightmodel/position/psi"  # OpenGL heading
+
+    class multiplayer:
+        """
+        Up to 19 multiplayer aircraft can be generated using DREFs.
+
+        To avoid having a string for each aircraft, formatting is taken advantage off. To modify DREF for a aircraft
+        with id i use:
+
+        ```multiplayer.[DREF].format(i)```
+        """
+        lon = "sim/multiplayer/position/plane1_lon"
+        lat = "sim/multiplayer/position/plane1_lat"
+        elev = "sim/multiplayer/position/plane1_el"
+        opengl_x: str = "sim/multiplayer/position/plane{0}_x"
+        opengl_vx: str = "sim/multiplayer/position/plane{0}_v_x"
+        opengl_y: str = "sim/multiplayer/position/plane{0}_y"
+        opengl_vy: str = "sim/multiplayer/position/plane{0}_v_y"
+        opengl_z: str = "sim/multiplayer/position/plane{0}_z"
+        opengl_vz: str = "sim/multiplayer/position/plane{0}_v_z"
+        opengl_pitch: str = "sim/multiplayer/position/plane{0}_the"
+        opengl_roll: str = "sim/multiplayer/position/plane{0}_phi"
+        opengl_hdg: str = "sim/multiplayer/position/plane{0}_psi"
+        flap: str = "sim/multiplayer/controls/flap_request[{0}]"
+        cs_pitch: str = "sim/multiplayer/controls/yoke_pitch_ratio[{0}]"
+        cs_roll: str = "sim/multiplayer/controls/yoke_roll_ratio[{0}]"
+        cs_hdg: str = "sim/multiplayer/controls/yoke_heading_ratio[{0}]"
+        engine_throttle = "sim/multiplayer/controls/engine_throttle_request[{0}]"
+        engine_mixture = "sim/multiplayer/controls/engine_mixture_request[{0}]"
 
