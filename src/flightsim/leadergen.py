@@ -81,7 +81,7 @@ class _Loader:
         self._sim.set(DREFs.multiplayer.flap.format(self._ldr_id + 1), 0)
 
     def _create_multiplayer_control(self, target_hdg) -> Thread:
-        self.controller = MultiplayerControl(self._sim, self._ldr_id, target_hdg)
+        self.controller = MultiplayerControl(self._ldr_id, target_hdg)
         return self.controller
 
     @property
@@ -132,7 +132,7 @@ class Cone(_Loader):
         """
         Generate the leader around a cone shape
 
-        :param simulator: Simulator object to send data and recieve from X-Plane. If None we will generate the simulator
+        :param simulator: Simulator object to send data and recieve from X-Plane. This will only be used in loading. A second will be used for the separate Thread
         :type simulator: Simulator
         :param acft_id: ID of multiplayer aircraft to use (typically 1)
         :type acft_id: int
