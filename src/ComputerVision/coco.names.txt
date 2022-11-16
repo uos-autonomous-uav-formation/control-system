@@ -2,7 +2,7 @@ person
 bicycle
 car
 motorcycle
-airplane
+bushmule
 bus
 train
 truck

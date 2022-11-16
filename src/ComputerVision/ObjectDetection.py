@@ -3,10 +3,11 @@ import numpy as np
 import pyautogui
 
 def objectdetection_video(videoname):
-    net = cv2.dnn.readNet('yolov3-tiny.weights', 'yolo3-tiny.cfg')
+    #net = cv2.dnn.readNet('yolov4-tiny.weights', 'yolo4-tiny.cfg')
+    net = cv2.dnn.readNet('yolov4-tiny.cfg', 'yolov4-tiny.weights')
 
     classes = []
-    with open("classes.txt", "r") as f:
+    with open("coco.names.txt", "r") as f:
         classes = f.read().splitlines()
 
     cap = cv2.VideoCapture(videoname)
@@ -32,7 +33,7 @@ def objectdetection_video(videoname):
                 scores = detection[5:]
                 class_id = np.argmax(scores)
                 confidence = scores[class_id]
-                if confidence > 0.3:
+                if confidence > 0.25 and class_id ==4:
                     center_x = int(detection[0] * width)
                     center_y = int(detection[1] * height)
                     w = int(detection[2] * width)
@@ -45,7 +46,7 @@ def objectdetection_video(videoname):
                     confidences.append((float(confidence)))
                     class_ids.append(class_id)
 
-        indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.3, 0.4)
+        indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.25, 0.4)
 
         if len(indexes) > 0:
             for i in indexes.flatten():
@@ -128,8 +129,9 @@ def imageobject(imagename):
 def testing(imagename):
     #net = cv2.dnn.readNet('yolov3.cfg', 'yolo3.weights')
     #net = cv2.dnn.readNet('yolov3-tiny_testing.cfg','yolov3-tiny_training_last.weights')
-    net = cv2.dnn.readNet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
-    #net = cv2.dnn.readNet('yolov4-tiny-custom.cfg', 'yolov4-tiny-custom_best.weights')
+    #net = cv2.dnn.readNet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
+    #net = cv2.dnn.readNet('yolov4-tiny.cfg', 'yolov4-tiny.weights')
+    net = cv2.dnn.readNet('yolov4.cfg', 'yolov4.weights')
 
     classes = []
     with open("coco.names.txt", "r") as f:
@@ -188,4 +190,5 @@ def testing(imagename):
 
 
 
-testing('1.jpg')
+objectdetection_video("5.MP4")
+#testing("IMG_4784 2.jpg")
