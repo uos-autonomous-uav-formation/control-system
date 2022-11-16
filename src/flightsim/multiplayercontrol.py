@@ -1,10 +1,9 @@
-import time
 from copy import copy
-from threading import Thread
-import numpy as Math
+from multiprocessing import Process
+from .sim import Simulator
+import numpy as np
 from .drefs import DREFs
 from .sim import Simulator
-from time import sleep
 
 DIST_STEP = 0.01
 
@@ -33,25 +32,29 @@ class _PID(object):
 
 
 def _brng_from_vec(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    lat1_rad = lat1 * Math.pi / 180
-    lat2_rad = lat2 * Math.pi / 180
-    delta1 = (lat2 - lat1) * Math.pi / 180
-    delta2 = (lon2 - lon1) * Math.pi / 180
+    lat1_rad = lat1 * np.pi / 180
+    lat2_rad = lat2 * np.pi / 180
+    delta1 = (lat2 - lat1) * np.pi / 180
+    delta2 = (lon2 - lon1) * np.pi / 180
 
-    y = Math.sin(delta2) * Math.cos(lat2_rad)
-    x = Math.cos(lat1_rad) * Math.sin(lat2_rad) - Math.sin(lat1_rad) * Math.cos(lat2_rad) * Math.cos(delta2)
+    y = np.sin(delta2) * np.cos(lat2_rad)
+    x = np.cos(lat1_rad) * np.sin(lat2_rad) - np.sin(lat1_rad) * np.cos(lat2_rad) * np.cos(delta2)
 
-    brng = Math.arctan2(y, x) * 180 / Math.pi
+    brng = np.arctan2(y, x) * 180 / np.pi
 
     return brng + 360 if brng < 0 else brng
 
 
-class MultiplayerControl(Thread):
+class MultiplayerControl(Process):
     max_roll = 20
 
-    def __init__(self, sim: Simulator, id: int, target_hdg):
+    def __init__(self, id: int, target_hdg):
         self.id = id
-        self._sim: Simulator = sim
+        super().__init__(target=self._control_system)
+        self.start()
+
+    def _start(self):
+        self._sim = Simulator()
 
         self._controller_alt = _PID(-1, 0, 0, 0)
         self._controller_roll = _PID(-1, 0, 0, 0)
@@ -62,11 +65,9 @@ class MultiplayerControl(Thread):
         self._sim.add_freq_value(DREFs.multiplayer.opengl_pitch.format(self.id), 60)
         self._sim.add_freq_value(DREFs.multiplayer.opengl_hdg.format(self.id), 60)
 
-        super().__init__(target=self._control_system)
-
-        self.start()
-
     def _control_system(self):
+        self._start()
+
         vx = self._sim.get(DREFs.grafics.opengl_vx)
         vz = self._sim.get(DREFs.grafics.opengl_vz)
 
@@ -87,5 +88,3 @@ class MultiplayerControl(Thread):
             self._sim.set(DREFs.multiplayer.cs_hdg.format(self.id), self._controller_yaw.controller(current_hdg))
             self._sim.set(DREFs.multiplayer.cs_pitch.format(self.id), self._controller_pitch.controller(current_pitch))
             self._sim.set(DREFs.multiplayer.opengl_vz.format(self.id), vz)
-
-            # time.sleep(0.01)
