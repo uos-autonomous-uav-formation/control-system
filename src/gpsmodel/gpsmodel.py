@@ -16,8 +16,8 @@ def GPSError(sim: Simulator) -> (float, float):
     sim.add_freq_value(DREFs.long)
 
     add_or_sub = random.randint(0,3)
-    val_1 = random.randint(0,5)
-    val_2 = random.randint(0,5)
+    val_1 = random.randint(0,5) #Random number gen for long
+    val_2 = random.randint(0,5) #Random number gen for latt
     lat_Xplane = sim.get(DREFs.lat) #Xplane lattitude
     long_Xplane = sim.get(DREFs.long) #Longitude extracted from Xplane
     lat_Xplane_5dp = (int(lat_Xplane/0.00001))/100000 # Take 5dp of Xplane Latt without rounding up

@@ -4,10 +4,12 @@ import pyautogui
 
 def objectdetection_video(videoname):
     #net = cv2.dnn.readNet('yolov4-tiny.weights', 'yolo4-tiny.cfg')
-    net = cv2.dnn.readNet('yolov4-tiny.cfg', 'yolov4-tiny.weights')
+    #net = cv2.dnn.readNet('yolov4-tiny.cfg', 'yolov4-tiny.weights')
+    net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-3.weights')
+    #net = cv2.dnn.readNet('yolov4.cfg', 'yolov4.weights')
 
     classes = []
-    with open("coco.names.txt", "r") as f:
+    with open("classes.txt", "r") as f:
         classes = f.read().splitlines()
 
     cap = cv2.VideoCapture(videoname)
@@ -33,7 +35,7 @@ def objectdetection_video(videoname):
                 scores = detection[5:]
                 class_id = np.argmax(scores)
                 confidence = scores[class_id]
-                if confidence > 0.25 and class_id ==4:
+                if confidence > 0.25 and class_id ==0:
                     center_x = int(detection[0] * width)
                     center_y = int(detection[1] * height)
                     w = int(detection[2] * width)
@@ -72,7 +74,8 @@ def objectdetection_video(videoname):
 def imageobject(imagename):
     #net = cv2.dnn.readNet('yolov3.cfg', 'yolo3.weights')
     #net = cv2.dnn.readNet('yolov3-tiny_training_last.weights','yolo3-tiny_testing.cfg')
-    net = cv2.dnn.readNetFromDarknet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
+    #net = cv2.dnn.readNetFromDarknet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
+    net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-2.weights')
 
     classes = []
     with open("classes.txt", "r") as f:
@@ -96,7 +99,7 @@ def imageobject(imagename):
             scores = detection[5:]
             class_id = np.argmax(scores)
             confidence = scores[class_id]
-            if confidence > 0.1 and class_id == 4:
+            if confidence > 0.1 and class_id == 0:
                 center_x = int(detection[0] * width)
                 center_y = int(detection[1] * height)
                 w = int(detection[2] * width)
@@ -131,10 +134,12 @@ def testing(imagename):
     #net = cv2.dnn.readNet('yolov3-tiny_testing.cfg','yolov3-tiny_training_last.weights')
     #net = cv2.dnn.readNet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
     #net = cv2.dnn.readNet('yolov4-tiny.cfg', 'yolov4-tiny.weights')
-    net = cv2.dnn.readNet('yolov4.cfg', 'yolov4.weights')
+    net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-3.weights')
+    #net = cv2.dnn.readNet('yolov4.cfg', 'yolov4.weights')
+    #net = cv2.dnn.readNet('yolov4-tiny(3class).cfg', 'yolov4-tiny(3class).weights')
 
     classes = []
-    with open("coco.names.txt", "r") as f:
+    with open("classes.txt", "r") as f:
         classes = f.read().splitlines()
 
     img = cv2.imread(imagename)
@@ -155,7 +160,7 @@ def testing(imagename):
             scores = detection[5:]
             class_id = np.argmax(scores)
             confidence = scores[class_id]
-            if confidence > 0.1 and class_id == 4:
+            if confidence > 0.01 and class_id == 0:
                 center_x = int(detection[0] * width)
                 center_y = int(detection[1] * height)
                 w = int(detection[2] * width)
@@ -168,7 +173,7 @@ def testing(imagename):
                 confidences.append((float(confidence)))
                 class_ids.append(class_id)
 
-    indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.1, 0.4)
+    indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.01, 0.4)
 
     font = cv2.FONT_HERSHEY_PLAIN
 
@@ -190,5 +195,5 @@ def testing(imagename):
 
 
 
-objectdetection_video("5.MP4")
-#testing("IMG_4784 2.jpg")
+#objectdetection_video("110.MP4")
+#testing("13.jpg")
