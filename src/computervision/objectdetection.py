@@ -2,12 +2,14 @@ import cv2
 import numpy as np
 import time
 from . import MODEL_CFG_DIR, MODEL_WEIGTS_DIR, CLASSES
+from dataclasses import dataclass
 
 
 def load_img_from_file(filename: str):
     return cv2.imread(filename)
 
-
+@dataclass
+# FIXME: Python dataclasses in Python 3.9 are not as optimum. Reconsider structure and storage of this information
 class Leader:
     _scores: np.ndarray[float]
     class_id: int
@@ -56,7 +58,8 @@ class Leader:
         color = (0, 255, 0)
 
         cv2.rectangle(img, (self.left(), self.top()), (self.right(), self.bottom()), color, 2)
-        cv2.putText(img, label + " " + confidence, (int(self.center_x), int(self.center_y)), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2)
+        cv2.putText(img, label + " " + confidence, (int(self.center_x), int(self.center_y)), cv2.FONT_HERSHEY_PLAIN, 2,
+                    (255, 255, 255), 2)
 
         return img
 
@@ -71,33 +74,28 @@ class ObjectDetection:
         self.__net = cv2.dnn.readNet(MODEL_CFG_DIR, MODEL_WEIGTS_DIR)
 
     def process(self, img: np.ndarray) -> list[Leader]:
-
-        start = time.time()
         height, width, _ = img.shape
 
+        start = time.time()
+
         blob = cv2.dnn.blobFromImage(img, 1 / 255, (416, 416), (0, 0, 0), swapRB=True, crop=False)
-        print(f"A: {time.time() - start}")
         self.__net.setInput(blob)
 
-
         layer_output = self.__net.forward(self.__net.getUnconnectedOutLayersNames())
-        print(f"B: {time.time() - start}")
 
         leader_box: list[Leader] = []
 
         for output in layer_output:
+            output = output[output[:, 5] > 0.1]
             for detection in output:
                 leader_box.append(Leader(detection, width, height))
 
-        print(f"C: {time.time() - start}")
-
-
+        print(time.time() - start)
 
         return leader_box
 
     def render(self, img: np.ndarray) -> np.ndarray:
         for i in self.process(img):
-            if i.confidence > 0.05:
-                i.render(img)
+            i.render(img)
 
         return img
