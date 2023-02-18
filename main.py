@@ -1,6 +1,7 @@
-from src.ComputerVision import CameraVision, ObjectDetection
+from src.ComputerVision import imageobject
+import time
 
 
 # NOTE THIS IF IS MANDATORY!!!!! REMOVING IT WILL BREAK PARALELISM
 if __name__ == '__main__':
-    ObjectDetection.objectdetection_video(CameraVision.livecamera())
+    imageobject("IMG_5494.jpg")

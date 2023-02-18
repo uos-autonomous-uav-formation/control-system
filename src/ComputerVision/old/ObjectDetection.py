@@ -1,15 +1,16 @@
 import cv2
 import numpy as np
-import pyautogui
+from math import floor
+
 
 def objectdetection_video(videoname):
-    #net = cv2.dnn.readNet('yolov4-tiny.weights', 'yolo4-tiny.cfg')
-    #net = cv2.dnn.readNet('yolov4-tiny.cfg', 'yolov4-tiny.weights')
+    # net = cv2.dnn.readNet('yolov4-tiny.weights', 'yolo4-tiny.cfg')
+    # net = cv2.dnn.readNet('yolov4-tiny.cfg', 'yolov4-tiny.weights')
     net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-3.weights')
-    #net = cv2.dnn.readNet('yolov4.cfg', 'yolov4.weights')
+    # net = cv2.dnn.readNet('yolov4.cfg', 'yolov4.weights')
 
     classes = []
-    with open("classes.txt", "r") as f:
+    with open("../models/classes.txt", "r") as f:
         classes = f.read().splitlines()
 
     cap = cv2.VideoCapture(videoname)
@@ -35,7 +36,7 @@ def objectdetection_video(videoname):
                 scores = detection[5:]
                 class_id = np.argmax(scores)
                 confidence = scores[class_id]
-                if confidence > 0.25 and class_id ==0:
+                if confidence > 0.25 and class_id == 0:
                     center_x = int(detection[0] * width)
                     center_y = int(detection[1] * height)
                     w = int(detection[2] * width)
@@ -68,23 +69,20 @@ def objectdetection_video(videoname):
     cv2.destroyAllWindows()
 
 
-
-
-
 def imageobject(imagename):
-    #net = cv2.dnn.readNet('yolov3.cfg', 'yolo3.weights')
-    #net = cv2.dnn.readNet('yolov3-tiny_training_last.weights','yolo3-tiny_testing.cfg')
-    #net = cv2.dnn.readNetFromDarknet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
-    net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-2.weights')
+    net = cv2.dnn.readNet('src\\ComputerVision\\yolov4-tiny-custom-2.cfg',
+                          'src\\ComputerVision\\yolov4-tiny-custom_best-3.weights')
 
     classes = []
-    with open("classes.txt", "r") as f:
+    with open("src\\ComputerVision\\classes.txt", "r") as f:
         classes = f.read().splitlines()
 
     img = cv2.imread(imagename)
+    img = cv2.resize(img, (500, 1080))
     height, width, _ = img.shape
 
     blob = cv2.dnn.blobFromImage(img, 1 / 255, (416, 416), (0, 0, 0), swapRB=True, crop=False)
+    # blob = cv2.dnn.blobFromImage(img, 1, (floor(height/32) * 32, floor(width/32) * 32), (0, 0, 0), swapRB=True, crop=False)
 
     net.setInput(blob)
     output_layers_names = net.getUnconnectedOutLayersNames()
@@ -116,13 +114,14 @@ def imageobject(imagename):
 
     font = cv2.FONT_HERSHEY_PLAIN
 
-    for i in indexes.flatten():
-        x, y, w, h = boxes[i]
-        label = str(classes[class_ids[i]])
-        confidence = str(round(confidences[i], 2))
-        color = (0, 255, 0)  # colors[i]
-        cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
-        cv2.putText(img, label + " " + confidence, (x, y + 20), font, 2, (255, 255, 255), 2)
+    if len(indexes) > 0:
+        for i in indexes.flatten():
+            x, y, w, h = boxes[i]
+            label = str(classes[class_ids[i]])
+            confidence = str(round(confidences[i], 2))
+            color = (0, 255, 0)  # colors[i]
+            cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
+            cv2.putText(img, label + " " + confidence, (x, y + 20), font, 2, (255, 255, 255), 2)
 
     cv2.imshow('Image', img)
     cv2.waitKey(0)
@@ -130,16 +129,16 @@ def imageobject(imagename):
 
 
 def testing(imagename):
-    #net = cv2.dnn.readNet('yolov3.cfg', 'yolo3.weights')
-    #net = cv2.dnn.readNet('yolov3-tiny_testing.cfg','yolov3-tiny_training_last.weights')
-    #net = cv2.dnn.readNet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
-    #net = cv2.dnn.readNet('yolov4-tiny.cfg', 'yolov4-tiny.weights')
+    # net = cv2.dnn.readNet('yolov3.cfg', 'yolo3.weights')
+    # net = cv2.dnn.readNet('yolov3-tiny_testing.cfg','yolov3-tiny_training_last.weights')
+    # net = cv2.dnn.readNet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
+    # net = cv2.dnn.readNet('yolov4-tiny.cfg', 'yolov4-tiny.weights')
     net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-3.weights')
-    #net = cv2.dnn.readNet('yolov4.cfg', 'yolov4.weights')
-    #net = cv2.dnn.readNet('yolov4-tiny(3class).cfg', 'yolov4-tiny(3class).weights')
+    # net = cv2.dnn.readNet('yolov4.cfg', 'yolov4.weights')
+    # net = cv2.dnn.readNet('yolov4-tiny(3class).cfg', 'yolov4-tiny(3class).weights')
 
     classes = []
-    with open("classes.txt", "r") as f:
+    with open("../models/classes.txt", "r") as f:
         classes = f.read().splitlines()
 
     img = cv2.imread(imagename)
@@ -190,10 +189,5 @@ def testing(imagename):
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-
-
-
-
-
-#objectdetection_video("110.MP4")
-#testing("13.jpg")
+# objectdetection_video("110.MP4")
+# testing("13.jpg")

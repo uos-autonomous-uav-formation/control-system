@@ -30,4 +30,4 @@ def object_identify_pic(img_name):
     cv2.imshow("Tracking", img)
     cv2.waitKey(0)
 
-object_identify_pic("x1.jpg.png")
+object_identify_pic("test1.jpg")

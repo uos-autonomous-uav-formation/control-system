@@ -40,5 +40,5 @@ def livecamera():
             break
 
 
-
-livecamera()
+if __name__ == "__main__":
+    livecamera()
