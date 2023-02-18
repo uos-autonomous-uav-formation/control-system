@@ -1,7 +1,8 @@
-from src.ComputerVision import imageobject
-import time
+from src.computervision import ObjectDetection, load_img_from_file, liveframe
 
 
 # NOTE THIS IF IS MANDATORY!!!!! REMOVING IT WILL BREAK PARALELISM
 if __name__ == '__main__':
-    imageobject("IMG_5494.jpg")
+    cv = ObjectDetection()
+
+    liveframe(cv.render)
