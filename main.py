@@ -1,6 +1,8 @@
-from src.ComputerVision import CameraVision, ObjectDetection
+from src.computervision import ObjectDetection, load_img_from_file, liveframe
 
 
 # NOTE THIS IF IS MANDATORY!!!!! REMOVING IT WILL BREAK PARALELISM
 if __name__ == '__main__':
-    ObjectDetection.objectdetection_video(CameraVision.livecamera())
+    cv = ObjectDetection()
+
+    liveframe(cv.render)

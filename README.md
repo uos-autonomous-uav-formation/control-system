@@ -29,3 +29,7 @@ https://github.com/ArduPilot/pymavlink
 
 
 https://developer.x-plane.com/datarefs/
+
+# Set up X-Plane SITL (Software in the loop)
+
+To use X-Plane as a flight dynamic model and graphics interface but sending commands to the ardupilot use https://ardupilot.org/dev/docs/sitl-with-xplane.html
