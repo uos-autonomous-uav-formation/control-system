@@ -5,7 +5,8 @@ import pyautogui
 def objectdetection_video(videoname):
     #net = cv2.dnn.readNet('yolov4-tiny.weights', 'yolo4-tiny.cfg')
     #net = cv2.dnn.readNet('yolov4-tiny.cfg', 'yolov4-tiny.weights')
-    net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-3.weights')
+    #net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-3.weights')
+    net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-c172.weights')
     #net = cv2.dnn.readNet('yolov4.cfg', 'yolov4.weights')
 
     classes = []
@@ -75,7 +76,8 @@ def imageobject(imagename):
     #net = cv2.dnn.readNet('yolov3.cfg', 'yolo3.weights')
     #net = cv2.dnn.readNet('yolov3-tiny_training_last.weights','yolo3-tiny_testing.cfg')
     #net = cv2.dnn.readNetFromDarknet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
-    net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-2.weights')
+    #net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-2.weights')
+    net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-c172.weights')
 
     classes = []
     with open("classes.txt", "r") as f:
@@ -134,7 +136,8 @@ def testing(imagename):
     #net = cv2.dnn.readNet('yolov3-tiny_testing.cfg','yolov3-tiny_training_last.weights')
     #net = cv2.dnn.readNet('yolo3-tiny.cfg', 'yolov3-tiny.weights')
     #net = cv2.dnn.readNet('yolov4-tiny.cfg', 'yolov4-tiny.weights')
-    net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-3.weights')
+    #net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-custom_best-3.weights')
+    net = cv2.dnn.readNet('yolov4-tiny-custom-2.cfg', 'yolov4-tiny-c172.weights')
     #net = cv2.dnn.readNet('yolov4.cfg', 'yolov4.weights')
     #net = cv2.dnn.readNet('yolov4-tiny(3class).cfg', 'yolov4-tiny(3class).weights')
 
