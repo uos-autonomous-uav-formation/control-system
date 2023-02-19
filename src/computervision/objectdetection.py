@@ -77,8 +77,6 @@ class ObjectDetection:
     def process(self, img: np.ndarray) -> list[Leader]:
         height, width, _ = img.shape
 
-        start = time.time()
-
         blob = cv2.dnn.blobFromImage(img, 1 / 255, (416, 416), (0, 0, 0), swapRB=True, crop=False)
         self.__net.setInput(blob)
 
@@ -91,12 +89,6 @@ class ObjectDetection:
             for detection in output:
                 leader_box.append(Leader(detection, width, height))
 
-        print(time.time() - start)
 
         return leader_box
 
-    def render(self, img: np.ndarray) -> np.ndarray:
-        for i in self.process(img):
-            i.render(img)
-
-        return img
