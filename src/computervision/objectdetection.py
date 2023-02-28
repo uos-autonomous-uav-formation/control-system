@@ -58,6 +58,8 @@ class Leader:
         confidence = str(round(self.confidence, 2))
         color = (0, 255, 0)
 
+        print(self.width, self.height)
+
         cv2.rectangle(img, (self.left(), self.top()), (self.right(), self.bottom()), color, 2)
         cv2.putText(img, label + " " + confidence, (int(self.center_x), int(self.center_y)), cv2.FONT_HERSHEY_PLAIN, 2,
                     (255, 255, 255), 2)

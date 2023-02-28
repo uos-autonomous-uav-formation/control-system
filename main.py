@@ -2,18 +2,23 @@ import numpy as np
 
 from src.computervision import ObjectDetection, load_img_from_file, liveframe, grab_screen_frame
 from src.flightsim import *
-from src.mavlink import SIMULATION
+from src.mavlink import SIMULATOR_ADDRS
+from src.mavlink.connection import MavlinkConn
 from pymavlink import mavutil
+import cv2
+
 import time
 from pymavlink.quaternion import QuaternionBase
 import math
 
 TARGET_Y = 540
+TARGET_X = 960
+
 
 def wait_heartbeat(m):
     """wait for a heartbeat so we know the target system IDs"""
     print("Waiting for APM heartbeat")
-    msg = m.recv_match(type='HEARTBEAT', blocking=True)
+
     print("Heartbeat from APM (system %u component %u)" % (m.target_system, m.target_component))
 
 
@@ -21,8 +26,9 @@ def wait_heartbeat(m):
 if __name__ == '__main__':
     boot_time = time.time()
     pitch = 0
+    roll = 0
 
-    mavlink = mavutil.mavlink_connection(SIMULATION, baud=57600, source_system=255)
+    mavlink = mavutil.mavlink_connection(SIMULATOR_ADDRS, baud=57600, source_system=255)
     wait_heartbeat(mavlink)
 
     sim = Simulator()
@@ -31,28 +37,30 @@ if __name__ == '__main__':
     cv = ObjectDetection()
 
     def loop(img: np.ndarray) -> np.ndarray:
-        global pitch
+        global pitch, roll
 
         leaders = cv.process(img)
 
+        cv2.circle(img, center=(TARGET_X, TARGET_Y), radius=10, color=(255,0,0), thickness=1)
+
         if len(leaders) > 0:
-            pitch = 0.01 * (TARGET_Y - leaders[0].center_y)
+            pitch = 0.05 * (TARGET_Y - leaders[0].center_y)
+            roll = -0.05 * (TARGET_X - leaders[0].center_x)
             img = leaders[0].render(img)
+
+        print(pitch)
 
         mavlink.mav.set_attitude_target_send(
             int(1e3 * (time.time() - boot_time)), # ms since boot
             mavlink.target_system, mavlink.target_component,
-            # allow throttle to be controlled by depth_hold mode
-            mavutil.mavlink.ATTITUDE_TARGET_TYPEMASK_THROTTLE_IGNORE,
+            mavutil.mavlink.ATTITUDE_TARGET_TYPEMASK_BODY_YAW_RATE_IGNORE,
             # -> attitude quaternion (w, x, y, z | zero-rotation is 1, 0, 0, 0)
-            QuaternionBase([math.radians(angle) for angle in (0, pitch, 0)]),
-            0, 0, 0, 0 # roll rate, pitch rate, yaw rate, thrust
+            QuaternionBase([math.radians(angle) for angle in (roll, pitch, 0)]),
+            0, 0, 0, 100 # roll rate, pitch rate, yaw rate, thrust
         )
-
-
 
         return img
 
-    liveframe(loop)
+    liveframe(loop, left=-1920)
 
     sim_process.join()
