@@ -3,7 +3,6 @@ import numpy as np
 from src.computervision import ObjectDetection, load_img_from_file, liveframe, grab_screen_frame
 from src.flightsim import *
 from src.mavlink import SIMULATOR_ADDRS
-from src.mavlink.connection import MavlinkConn
 from pymavlink import mavutil
 import cv2
 
