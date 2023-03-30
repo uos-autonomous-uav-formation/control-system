@@ -1,6 +1,6 @@
 import numpy as np
 from pymavlink import mavutil
-from src.computervision import ObjectDetection, load_img_from_file, liveframe, grab_screen_frame
+from src.computervision import ObjectDetection, liveframe, MODEL_WEIGTS_DIR_CESSNA
 from src.flightsim import *
 from src.mavlink import MavlinkConn, SIMULATOR_ADDRS
 import cv2
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     mavlink = MavlinkConn(SIMULATOR_ADDRS)
     mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 2)
 
-    cv = ObjectDetection()
+    cv = ObjectDetection(MODEL_WEIGTS_DIR_CESSNA)
 
 
     def loop(img: np.ndarray) -> np.ndarray:
@@ -40,14 +40,14 @@ if __name__ == '__main__':
         cv2.circle(img, center=(TARGET_X, TARGET_Y), radius=10, color=(255, 0, 0), thickness=1)
 
         if len(leaders) > 0:
-            dpitch = 0.02 * (TARGET_Y - leaders[0].center_y)
-            droll = -0.05 * (TARGET_X - leaders[0].center_x)
-            dthrottle = 0.5 * (200 - leaders[0].width)
+            pitch = 0.04 * (TARGET_Y - leaders[0].center_y)
+            roll = -0.05 * (TARGET_X - leaders[0].center_x)
+            throttle = 0.5 * (200 - leaders[0].width)
             print(leaders[0].width)
 
             img = leaders[0].render(img)
 
-            mavlink.set_change_in_attitude(droll, dpitch, 0, dthrottle)
+            mavlink.set_attitude(roll, pitch, 0, throttle)
 
         # TODO: If on guided mode but don't detect leader for a long time switch flight mode to a safe one
 

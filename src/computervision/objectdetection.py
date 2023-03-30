@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import time
-from . import MODEL_CFG_DIR, MODEL_WEIGTS_DIR, CLASSES
+from . import MODEL_CFG_DIR, CLASSES
 from dataclasses import dataclass
 
 
@@ -68,11 +68,11 @@ class Leader:
 class ObjectDetection:
     __net: cv2.dnn.Net
 
-    def __init__(self):
-        self._load_net()
+    def __init__(self, weights: str):
+        self._load_net(weights)
 
-    def _load_net(self) -> None:
-        self.__net = cv2.dnn.readNet(MODEL_CFG_DIR, MODEL_WEIGTS_DIR)
+    def _load_net(self, weights: str) -> None:
+        self.__net = cv2.dnn.readNet(MODEL_CFG_DIR, weights)
 
     def process(self, img: np.ndarray) -> list[Leader]:
         height, width, _ = img.shape

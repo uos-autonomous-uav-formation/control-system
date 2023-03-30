@@ -1,5 +1,6 @@
 MODEL_CFG_DIR = "src\\ComputerVision\\models\\yolov4-tiny-custom-2.cfg"
-MODEL_WEIGTS_DIR = "src\\ComputerVision\\models\\yolov4-tiny-c172.weights"
+MODEL_WEIGTS_DIR_DRACO = "src\\ComputerVision\\models\\yolov4-tiny-custom_best-3.weights"
+MODEL_WEIGTS_DIR_CESSNA = "src\\ComputerVision\\models\\yolov4-tiny-c172.weights"
 
 with open("src\\ComputerVision\\models\\classes.txt", "r") as f:
     CLASSES = f.readlines()
