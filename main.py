@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # TODO: Start with the initial conditions when engaded
 
     sim = Simulator()
-    sim_process = cone_leadergen(sim, 1, min_distance=3, max_distance=5, angle=1).load_leader()
+    sim_process = cone_leadergen(sim, 1, min_distance=3, max_distance=5, angle=0).load_leader()
 
     mavlink = MavlinkConn(SIMULATOR_ADDRS)
     mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 2)

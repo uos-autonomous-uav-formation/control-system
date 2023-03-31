@@ -9,7 +9,7 @@ class AircraftController:
     def proc(self, nd_x, nd_y, area) -> (float, float, float, float):
         pitch = self._pitch_pid.controller(nd_y)
         roll = self._roll_pid.controller(nd_x)
-        throttle = self._roll_pid.controller(area)
+        throttle = self._throttle_pid.controller(area)
         return roll, pitch, 0, throttle
 
     def set_target(self, x, y, area):
@@ -27,4 +27,4 @@ class CessnaController(AircraftController):
         super().__init__()
         self._pitch_pid = PID(0.4, 0, 0, 0)
         self._roll_pid = PID(-0.5, 0, 0, 0)
-        self._throttle_pid = PID(10, 0, 0, 0.1)
+        self._throttle_pid = PID(0.2, 0, 0, 0.1)
