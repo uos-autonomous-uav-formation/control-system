@@ -29,6 +29,11 @@ class DREFs:
     cs_hdg = "sim/joystick/yolk_heading_ratio"
     cs_pitch = "sim/joystick/yolk_pitch_ratio"
 
+    # The following values are with respect to the ground below
+    true_heading = "sim/flightmodel/position/true_psi"
+    true_roll = "sim/flightmodel/position/true_phi"
+    true_pitch = "sim/flightmodel/position/true_theta"
+
     class grafics:
         openglref_lat: str = "sim/flightmodel/position/lat_ref"
         openglref_lon: str = "sim/flightmodel/position/lon_ref"
