@@ -63,7 +63,7 @@ class _Loader:
 
     def _gen_leader(self, aircraft: _aircraft) -> None:
         # Y is height, Z is north, X is east (units not the same)
-        self._sim.set(f"sim/operation/override/override_autopilot[{self._ldr_id}]", True)
+        # self._sim.set(f"sim/operation/override/override_autopilot[{self._ldr_id}]", True)
 
         self._sim.set(DREFs.multiplayer.opengl_hdg.format(self._ldr_id), aircraft.hdg)
         self._sim.set(DREFs.multiplayer.opengl_pitch.format(self._ldr_id), aircraft.pitch)

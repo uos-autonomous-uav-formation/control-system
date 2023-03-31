@@ -19,6 +19,7 @@ class MavlinkConn:
 
         # TODO: Check validity of heart beat
         # TODO: Handle lack of heartbeats in other commands
+        # TODO: Send own heartbeat at a frequency
 
     def set_attitude(self, roll, pitch, yaw, throttle):
         self._mavlink.mav.set_attitude_target_send(
