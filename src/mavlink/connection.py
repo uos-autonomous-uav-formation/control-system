@@ -35,7 +35,6 @@ class MavlinkConn:
         throttle_data = self.recover_data("VFR_HUD")
 
         if attitude_data is not None and throttle_data is not None:
-            print(f"Throttle: {throttle_data['throttle'] + dthrottle}")
             self.set_attitude(attitude_data["roll"] + droll, attitude_data["pitch"] + dpitch, attitude_data["yaw"] + dyaw, throttle_data["throttle"] + dthrottle)
 
     def request_message_interval(self, message_id: int, frequency_hz: float):
@@ -60,6 +59,8 @@ class MavlinkConn:
         )
 
     def recover_data(self, request_type) -> dict:
+
+        # FIXME: Consider asynchronous receiving
         response = self._mavlink.recv_match(type=request_type)
 
         if response is not None:
