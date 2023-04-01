@@ -153,7 +153,7 @@ class Cone(_Loader):
                               100 if "max_distance" not in self._args.keys() else self._args["max_distance"])
         leader = copy.copy(self._flw)
 
-        leader.y = self._flw.y + random.randint(-10, 100)
+        leader.y = self._flw.y + dist
         leader.x = self._flw.x + dist * (self._flw.vx * np.cos(angle) - self._flw.vz * np.sin(angle))
         leader.z = self._flw.z + dist * (self._flw.vx * np.sin(angle) + self._flw.vz * np.cos(angle))
 
