@@ -1,3 +1,4 @@
+import numpy as np
 from pymavlink import mavutil
 from pymavlink.quaternion import QuaternionBase
 from datetime import datetime
@@ -30,12 +31,24 @@ class MavlinkConn:
             0, 0, 0, throttle  # roll rate, pitch rate, yaw rate, thrust
         )
 
-    def set_change_in_attitude(self, droll, dpitch, dyaw, dthrottle):
+    def set_change_in_attitude(self, droll, dpitch, dyaw, dthrottle, roll_limit: tuple[float, float] =None, pitch_limit=None):
         attitude_data = self.recover_data("ATTITUDE")
         throttle_data = self.recover_data("VFR_HUD")
 
         if attitude_data is not None and throttle_data is not None:
-            self.set_attitude(attitude_data["roll"] + droll, attitude_data["pitch"] + dpitch, attitude_data["yaw"] + dyaw, throttle_data["throttle"] + dthrottle)
+            roll = attitude_data["roll"] + droll
+
+            if roll_limit is not None:
+                roll = np.clip(roll, roll_limit[0], roll_limit[1])
+
+            pitch = attitude_data["pitch"] + dpitch
+
+            if pitch_limit is not None:
+                pitch = np.clip(pitch, pitch_limit[0], pitch_limit[1])
+
+            self.set_attitude(roll, pitch, attitude_data["yaw"] + dyaw, np.clip(throttle_data["throttle"] + dthrottle, 30, 100))
+        else:
+            print("Error")
 
     def request_message_interval(self, message_id: int, frequency_hz: float):
         """
