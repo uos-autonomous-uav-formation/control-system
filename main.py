@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
             throttle = np.clip(throttle, 0.3, 0.8)
 
-            mavlink.send_msg(f"Camera vision confidence{leaders[0].confidence}")
+            mavlink.send_val("MAV_CVCONF", leaders[0].confidence * 100)
 
             with open("flight.csv", "a") as f:
                 f.write(f"{aprox_dist},{dyaw_angle},{dpitch_angle},{pitch},{roll},{throttle},{leaders[0].confidence}\n")

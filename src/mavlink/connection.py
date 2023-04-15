@@ -85,3 +85,8 @@ class MavlinkConn:
 
     def send_msg(self, txt: str, severity: int = 4):
         self._mavlink.mav.statustext_send(severity, txt.encode())
+
+    def send_val(self, name: str, val: float):
+        self._mavlink.mav.named_value_float_send(int(1e3 * (time.time() - self.boot_time)),
+                                               name.encode(),
+                                               (val))
