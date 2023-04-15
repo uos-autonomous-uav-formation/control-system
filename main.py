@@ -43,15 +43,13 @@ if __name__ == '__main__':
         cv2.circle(img, center=(int(img.shape[1] * xoff_from_angle(TARGET_YAW)), int(img.shape[0] * xoff_from_angle(TARGET_PITCH))), radius=10, color=(255, 0, 0), thickness=1)
 
         if len(leaders) > 0:
-            aprox_dist = 2 * dist_from_width(leaders[0].width_non_dimensional)
-            dyaw_angle = 2 * angle_from_xoff(leaders[0].center_x_non_dimensional)
+            aprox_dist = dist_from_width(leaders[0].width_non_dimensional)
+            dyaw_angle = angle_from_xoff(leaders[0].center_x_non_dimensional)
             dpitch_angle = angle_from_xoff(leaders[0].center_y_non_dimensional)
 
             pitch = dpitch_angle - TARGET_PITCH
             roll = 2 * (TARGET_YAW - dyaw_angle)
             throttle = 0.018 * (aprox_dist - TARGET_DIST)
-
-            throttle = np.clip(throttle, 0.3, 0.8)
 
             mavlink.send_val("MAV_CVCONF", leaders[0].confidence * 100)
 

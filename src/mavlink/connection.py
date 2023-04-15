@@ -46,7 +46,7 @@ class MavlinkConn:
             if pitch_limit is not None:
                 pitch = np.clip(pitch, pitch_limit[0], pitch_limit[1])
 
-            self.set_attitude(roll, pitch, attitude_data["yaw"] + dyaw, np.clip(throttle_data["throttle"] + dthrottle, 30, 100))
+            self.set_attitude(roll, pitch, attitude_data["yaw"] + dyaw, np.clip(dthrottle + 0.45, 0.3, 0.8))
         else:
             print("Error")
 
