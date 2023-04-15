@@ -12,7 +12,7 @@ class MavlinkConn:
     _data: dict[str, dict] = {}
 
     def __init__(self, device: str, ):
-        self._mavlink = mavutil.mavlink_connection(device, baud=57600, source_system=255)
+        self._mavlink = mavutil.mavlink_connection(device, baud=57600, source_system=1)
         self.boot_time = time.time()
 
     def _heartbeat(self, blocking: bool = False) -> bool:
@@ -82,3 +82,6 @@ class MavlinkConn:
 
         if request_type in self._data.keys():
             return self._data[request_type]
+
+    def send_msg(self, txt: str, severity: int = 4):
+        self._mavlink.mav.statustext_send(severity, txt.encode())
