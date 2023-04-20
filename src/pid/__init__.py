@@ -19,12 +19,22 @@ class PID(object):
     def set_target(self, new_target: float):
         self.target = new_target
 
-    def controller(self, pos: float) -> float:
+    def controller(self, pos: float, filter: float) -> float:
         current_time = time.time()
 
         self.error = pos - self.target
 
-        self.integral_error += self.error * (current_time - self._previous_time)
+        if filter is not None:
+            if self.error < filter:
+                self.integral_error += self.error * (current_time - self._previous_time)
+
+            else:
+                self.integral_error = 0
+
+        else:
+            self.integral_error += self.error * (current_time - self._previous_time)
+
+
         derivative_error = (self.error - self.error_last) / (current_time - self._previous_time)
         self.output = self.kp * self.error + self.ki*self.integral_error + self.kd * derivative_error
 

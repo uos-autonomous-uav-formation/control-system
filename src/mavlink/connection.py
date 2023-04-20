@@ -40,7 +40,8 @@ class MavlinkConn:
         )
 
     def set_change_in_attitude(self, droll, dpitch, dyaw, dthrottle, roll_limit: tuple[float, float] = None,
-                               pitch_limit=None):
+                               pitch_limit=None,
+                               throttle_limit: tuple[float, float] = None):
         attitude_data = self.recover_data("ATTITUDE")
         throttle_data = self.recover_data("VFR_HUD")
 
@@ -55,7 +56,10 @@ class MavlinkConn:
             if pitch_limit is not None:
                 pitch = np.clip(pitch, pitch_limit[0], pitch_limit[1])
 
-            self.set_attitude(roll, pitch, attitude_data["yaw"] + dyaw, np.clip(dthrottle + 0.45, 0.3, 0.8))
+            if throttle_limit is not None:
+                dthrottle = np.clip(dthrottle, throttle_limit[0], throttle_limit[1])
+
+            self.set_attitude(roll, pitch, attitude_data["yaw"] + dyaw, dthrottle)
         else:
             print("Error")
 

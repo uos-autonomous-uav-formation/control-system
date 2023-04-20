@@ -5,13 +5,15 @@ from src.controlsystem import dist_from_width, angle_from_xoff, xoff_from_angle
 from src.flightsim import *
 from src.mavlink import MavlinkConn, SIMULATOR_ADDRS
 import cv2
-from src.controlsystem import CessnaController
 
 import time
+
+from src.pid import PID
 
 TARGET_DIST = 6
 TARGET_YAW = 13
 TARGET_PITCH = 0
+REF_THROTTLE = 0.5
 
 
 def wait_heartbeat(m):
@@ -35,6 +37,8 @@ if __name__ == '__main__':
 
     cv = ObjectDetection(MODEL_WEIGTS_DIR_CESSNA)
 
+    throttle_controller = PID(0.006, 0, 0, 0)
+
     def loop(img: np.ndarray) -> np.ndarray:
         global pitch, roll, mavlink, TARGET_YAW, TARGET_DIST, TARGET_DIST
 
@@ -45,25 +49,32 @@ if __name__ == '__main__':
                    color=(255, 0, 0), thickness=1)
 
         if len(leaders) > 0:
+            # Translate computer vision to approximate positions
             aprox_dist = dist_from_width(leaders[0].width_non_dimensional)
             dyaw_angle = angle_from_xoff(leaders[0].center_x_non_dimensional)
             dpitch_angle = angle_from_xoff(leaders[0].center_y_non_dimensional)
 
+            # Calculate errors from target positions and scaling factors prior to control system
             pitch = dpitch_angle - TARGET_PITCH
             roll = 1.7 * (TARGET_YAW - dyaw_angle)
-            throttle = 0.018 * (aprox_dist - TARGET_DIST)
+            throttle = throttle_controller.controller(aprox_dist - TARGET_DIST, 8)
 
-            mavlink.send_float("1CVCONF", dyaw_angle)
             mavlink.send_int("2CVDIST", int(aprox_dist * 10))
+
+            # Safety constrain
+            if aprox_dist < 4:
+                pitch = 8
+                throttle = 0
 
             with open("flight.csv", "a") as f:
                 f.write(f"{aprox_dist},{dyaw_angle},{dpitch_angle},{pitch},{roll},{throttle},{leaders[0].confidence}\n")
 
             img = leaders[0].render(img)
 
-            mavlink.set_change_in_attitude(roll, pitch, 0, throttle, roll_limit=(-15, 6))
+            mavlink.set_change_in_attitude(roll, pitch, 0, throttle + REF_THROTTLE, roll_limit=(-15, 6), throttle_limit=(0.1, 0.65))
 
         # TODO: If on guided mode but don't detect leader for a long time switch flight mode to a safe one
+
         return img
 
 
