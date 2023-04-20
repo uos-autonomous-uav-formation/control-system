@@ -20,6 +20,7 @@ class MavlinkConn:
 
         # TODO: Check validity of heart beat
         # TODO: Handle lack of heartbeats in other commands
+        # TODO: Send own heartbeat at a frequency
 
     def send_heatbeat(self):
         self._mavlink.heartbeat_send(

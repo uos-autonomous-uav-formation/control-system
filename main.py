@@ -5,6 +5,7 @@ from src.controlsystem import dist_from_width, angle_from_xoff, xoff_from_angle
 from src.flightsim import *
 from src.mavlink import MavlinkConn, SIMULATOR_ADDRS
 import cv2
+from src.controlsystem import CessnaController
 
 import time
 
@@ -63,7 +64,6 @@ if __name__ == '__main__':
             mavlink.set_change_in_attitude(roll, pitch, 0, throttle, roll_limit=(-15, 6))
 
         # TODO: If on guided mode but don't detect leader for a long time switch flight mode to a safe one
-
         return img
 
 
