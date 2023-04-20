@@ -21,6 +21,13 @@ class MavlinkConn:
         # TODO: Check validity of heart beat
         # TODO: Handle lack of heartbeats in other commands
 
+    def send_heatbeat(self):
+        self._mavlink.heartbeat_send(
+            6,  # MAVTYPE =
+            8,  # MAVAUTOPILOT
+            128,  # MAV_MODE =
+            0, 0)  # MAVSTATE =
+
     def set_attitude(self, roll, pitch, yaw, throttle):
         self._mavlink.mav.set_attitude_target_send(
             int(1e3 * (time.time() - self.boot_time)),  # ms since boot
@@ -31,7 +38,8 @@ class MavlinkConn:
             0, 0, 0, throttle  # roll rate, pitch rate, yaw rate, thrust
         )
 
-    def set_change_in_attitude(self, droll, dpitch, dyaw, dthrottle, roll_limit: tuple[float, float] =None, pitch_limit=None):
+    def set_change_in_attitude(self, droll, dpitch, dyaw, dthrottle, roll_limit: tuple[float, float] = None,
+                               pitch_limit=None):
         attitude_data = self.recover_data("ATTITUDE")
         throttle_data = self.recover_data("VFR_HUD")
 
@@ -86,7 +94,11 @@ class MavlinkConn:
     def send_msg(self, txt: str, severity: int = 4):
         self._mavlink.mav.statustext_send(severity, txt.encode())
 
-    def send_val(self, name: str, val: float):
+    def send_float(self, name: str, val: float):
         self._mavlink.mav.named_value_float_send(int(1e3 * (time.time() - self.boot_time)),
+                                                 name.encode(),
+                                                 val)
+    def send_int(self, name: str, val: int):
+        self._mavlink.mav.named_value_int_send(int(1e3 * (time.time() - self.boot_time)),
                                                name.encode(),
-                                               (val))
+                                               int(val))
