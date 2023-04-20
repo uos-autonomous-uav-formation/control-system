@@ -1,3 +1,4 @@
+import numpy as np
 from pymavlink import mavutil
 from pymavlink.quaternion import QuaternionBase
 from datetime import datetime
@@ -11,7 +12,7 @@ class MavlinkConn:
     _data: dict[str, dict] = {}
 
     def __init__(self, device: str, ):
-        self._mavlink = mavutil.mavlink_connection(device, baud=57600, source_system=255)
+        self._mavlink = mavutil.mavlink_connection(device, baud=57600, source_system=1)
         self.boot_time = time.time()
 
     def _heartbeat(self, blocking: bool = False) -> bool:
@@ -20,6 +21,13 @@ class MavlinkConn:
         # TODO: Check validity of heart beat
         # TODO: Handle lack of heartbeats in other commands
         # TODO: Send own heartbeat at a frequency
+
+    def send_heatbeat(self):
+        self._mavlink.heartbeat_send(
+            6,  # MAVTYPE =
+            8,  # MAVAUTOPILOT
+            128,  # MAV_MODE =
+            0, 0)  # MAVSTATE =
 
     def set_attitude(self, roll, pitch, yaw, throttle):
         self._mavlink.mav.set_attitude_target_send(
@@ -31,12 +39,25 @@ class MavlinkConn:
             0, 0, 0, throttle  # roll rate, pitch rate, yaw rate, thrust
         )
 
-    def set_change_in_attitude(self, droll, dpitch, dyaw, dthrottle):
+    def set_change_in_attitude(self, droll, dpitch, dyaw, dthrottle, roll_limit: tuple[float, float] = None,
+                               pitch_limit=None):
         attitude_data = self.recover_data("ATTITUDE")
         throttle_data = self.recover_data("VFR_HUD")
 
         if attitude_data is not None and throttle_data is not None:
-            self.set_attitude(attitude_data["roll"] + droll, attitude_data["pitch"] + dpitch, attitude_data["yaw"] + dyaw, throttle_data["throttle"] + dthrottle)
+            roll = attitude_data["roll"] + droll
+
+            if roll_limit is not None:
+                roll = np.clip(roll, roll_limit[0], roll_limit[1])
+
+            pitch = attitude_data["pitch"] + dpitch
+
+            if pitch_limit is not None:
+                pitch = np.clip(pitch, pitch_limit[0], pitch_limit[1])
+
+            self.set_attitude(roll, pitch, attitude_data["yaw"] + dyaw, np.clip(dthrottle + 0.45, 0.3, 0.8))
+        else:
+            print("Error")
 
     def request_message_interval(self, message_id: int, frequency_hz: float):
         """
@@ -70,3 +91,15 @@ class MavlinkConn:
 
         if request_type in self._data.keys():
             return self._data[request_type]
+
+    def send_msg(self, txt: str, severity: int = 4):
+        self._mavlink.mav.statustext_send(severity, txt.encode())
+
+    def send_float(self, name: str, val: float):
+        self._mavlink.mav.named_value_float_send(int(1e3 * (time.time() - self.boot_time)),
+                                                 name.encode(),
+                                                 val)
+    def send_int(self, name: str, val: int):
+        self._mavlink.mav.named_value_int_send(int(1e3 * (time.time() - self.boot_time)),
+                                               name.encode(),
+                                               int(val))
