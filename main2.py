@@ -1,16 +1,16 @@
+import busio
+import board
 import numpy as np
 from pymavlink import mavutil
-from src.computervision import ObjectDetection, liveframe, MODEL_WEIGTS_DIR_CESSNA, MODEL_WEIGTS_DIR_DRACO
-from src.controlsystem import dist_from_width, angle_from_xoff, xoff_from_angle
-from src.flightsim import *
-from src.mavlink import MavlinkConn, SIMULATOR_ADDRS
-import cv2
-from src.vortex.Vortex import *
-from src.vortex.Vortex_Sim import *
-from src.vortex.sim import model
-import time
-
+from src.computervision import ObjectDetection, MODEL_WEIGTS_DIR_DRACO
+from src.controlsystem import dist_from_width, angle_from_xoff
+from src.mavlink import MavlinkConn, RASPI
+from picamera2 import Picamera2
+from libcamera import Transform
 from src.pid import PID
+import time
+from src.aoa_sensor import *
+from src.vortex.Vortex import moving_ave, state_count, state_iden
 
 TARGET_DIST = 6
 TARGET_YAW = 13
@@ -23,41 +23,40 @@ reading_std = 0.1
 n_mov = 10
 ideal_span_sep = 1.6
 
+
 # NOTE THIS IF IS MANDATORY!!!!! REMOVING IT WILL BREAK PARALELISM
 if __name__ == '__main__':
     boot_time = time.time()
+    # TODO: Start with the initial conditions when engaded
 
-    sim = Simulator()
-    sim_process = cone_leadergen(sim, 1, min_distance=3, max_distance=5, angle=0.2).load_leader()
-
-    mavlink = MavlinkConn(SIMULATOR_ADDRS)
-    # TODO: Slow these down depending on how long the loop takes
+    mavlink = MavlinkConn(RASPI)
     mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 30)
     mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD, 30)
     mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SYSTEM_TIME, 10)
+    print("Mavlink initiated")
 
-    cv = ObjectDetection(MODEL_WEIGTS_DIR_CESSNA)
 
+    picam2 = Picamera2()
+    camera_config = picam2.create_still_configuration(main={"size": (1920, 1082)}, transform=Transform(180))
+    picam2.configure(camera_config)
+    picam2.start()
+    print("Camera initiated")
+
+    spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
+
+    aoa_r = AoaSensor(2, spi, board.D20, 5, AoA2_conf)
+    aoa_l = AoaSensor(1, spi, board.D7, 5, AoA1_conf)
+    print("AoA sensors initiated")
+
+    cv = ObjectDetection(MODEL_WEIGTS_DIR_DRACO)
     throttle_controller = PID(0.006, 0.00004, 0, 0)
+    print("Preflight checks complete, starting controller")
 
-    sim = Simulator()
-    sim.add_freq_value(DREFs.multiplayer.lon, 60)
-    sim.add_freq_value(DREFs.long, 60)
-    sim.add_freq_value(DREFs.multiplayer.lat, 60)
-    sim.add_freq_value(DREFs.lat, 60)
+    while True:
 
-
-    def loop(img: np.ndarray) -> np.ndarray:
-        global pitch, roll, mavlink, TARGET_YAW, TARGET_DIST, TARGET_DIST
-
-        start = time.time()
+        img = picam2.capture_array()
 
         leaders = cv.process(img)
-
-        cv2.circle(img, center=(
-            int(img.shape[1] * xoff_from_angle(TARGET_YAW)), int(img.shape[0] * xoff_from_angle(TARGET_PITCH))),
-                   radius=10,
-                   color=(255, 0, 0), thickness=1)
 
         mavlink.send_heatbeat()
         mavlink.corrected_timestamp()
@@ -92,17 +91,13 @@ if __name__ == '__main__':
                     state_array = np.zeros(4)
                     statelist = []
 
-                    start1 = time.time()
-
                     for i in range(5):
                         # Used on the aircraft
                         a_angle = mavlink.recover_data("ATTITUDE")[0]["pitch"]
-                        reading_l = model(sim)[0]
-                        reading_r = model(sim)[1]
+                        reading_l = aoa_l.alpha_aoa(mavlink.recover_data("VFR_HUD")[0]["airspeed"])
+                        reading_r = aoa_r.alpha_aoa(mavlink.recover_data("VFR_HUD")[0]["airspeed"])
                         ave_l, ave_r, diff_ave = moving_ave(reading_l, reading_r, a_angle, n_mov)
                         end = time.time()
-
-                    time1 = time.time() - start1
 
                     if -(reading_std / 2) < diff_ave < (reading_std / 2) and -(reading_std / 2) < ave_l < (
                             reading_std / 2) and -(reading_std / 2) < ave_r < (
@@ -141,9 +136,3 @@ if __name__ == '__main__':
         # else:
         #     mavlink.set_change_in_attitude(0, 0, 0, REF_THROTTLE, roll_limit=(-15, 6), throttle_limit=(0.1, 0.65))
 
-        return img
-
-
-    liveframe(loop, left=-1920)
-
-    # sim_process.join()

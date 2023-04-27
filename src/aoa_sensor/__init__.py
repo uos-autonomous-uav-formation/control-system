@@ -1,1 +1,1 @@
-from .aoa_sensor import AoaSensor
+from .aoa_sensor import AoaSensor, AoA1_conf, AoA2_conf
