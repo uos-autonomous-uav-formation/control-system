@@ -25,18 +25,19 @@ reading_std = 0.4
 # NOTE THIS IF IS MANDATORY!!!!! REMOVING IT WILL BREAK PARALELISM
 if __name__ == '__main__':
     boot_time = time.time()
-    # TODO: Start with the initial conditions when engaded
 
     sim = Simulator()
     sim_process = cone_leadergen(sim, 1, min_distance=3, max_distance=5, angle=0.2).load_leader()
 
     mavlink = MavlinkConn(SIMULATOR_ADDRS)
-    mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 30)
-    mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD, 30)
+    # TODO: Slow these down depending on how long the loop takes
+    mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 15)
+    mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD, 15)
+    mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SYSTEM_TIME, 10)
 
     cv = ObjectDetection(MODEL_WEIGTS_DIR_CESSNA)
 
-    throttle_controller = PID(0.006, 0.00001, 0, 0)
+    throttle_controller = PID(0.008, 0.00004, 0, 0)
 
     sim = Simulator()
     sim.add_freq_value(DREFs.multiplayer.lon, 60)
@@ -52,6 +53,9 @@ if __name__ == '__main__':
         cv2.circle(img, center=(
         int(img.shape[1] * xoff_from_angle(TARGET_YAW)), int(img.shape[0] * xoff_from_angle(TARGET_PITCH))), radius=10,
                    color=(255, 0, 0), thickness=1)
+
+        mavlink.send_heatbeat()
+        mavlink.corrected_timestamp()
 
         if len(leaders) > 0:
             # Translate computer vision to approximate positions
@@ -72,12 +76,12 @@ if __name__ == '__main__':
                 throttle = 0
 
             with open("flight.csv", "a") as f:
-                f.write(f"{aprox_dist},{dyaw_angle},{dpitch_angle},{pitch},{roll},{throttle},{leaders[0].confidence}\n")
+                f.write(f"{mavlink.corrected_timestamp()},{aprox_dist},{dyaw_angle},{dpitch_angle},{pitch},{roll},{throttle},{leaders[0].confidence}\n")
 
             img = leaders[0].render(img)
 
             mavlink.set_change_in_attitude(roll, pitch, 0, throttle + REF_THROTTLE, roll_limit=(-15, 6), throttle_limit=(0.1, 0.70))
-            mavlink.send_heatbeat()
+
             # TODO: If on guided mode but don't detect leader for a long time switch flight mode to a safe one
             start_overall = time.time()
 
@@ -155,6 +159,6 @@ if __name__ == '__main__':
         return img
 
 
-    liveframe(loop, left=1920)
+    liveframe(loop, left=-1920)
 
     # sim_process.join()

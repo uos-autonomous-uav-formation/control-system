@@ -12,17 +12,20 @@ class MavlinkConn:
     last_heartbeat: datetime
     boot_time: float
     _data: dict[str, dict] = {}
+    _offset: int = 0
 
     def __init__(self, device: str):
         self._mavlink = mavutil.mavlink_connection(device, baud=57600, source_system=2)
         self.boot_time = time.time()
 
-    def _heartbeat(self, blocking: bool = False) -> bool:
-        msg = self._mavlink.recv_match(type='HEARTBEAT', blocking=blocking)
+    def corrected_timestamp(self):
+        depoch, was_updated = self.recover_data("SYSTEM_TIME")
+        depoch = depoch['time_unix_usec']
 
-        # TODO: Check validity of heart beat
-        # TODO: Handle lack of heartbeats in other commands
-        # TODO: Send own heartbeat at a frequency
+        if was_updated:
+            self._offset = depoch - int(time.time() * 1e6)
+
+        return int(time.time() * 1e6 + self._offset)
 
     def send_heatbeat(self):
         self._mavlink.mav.heartbeat_send(
@@ -45,8 +48,8 @@ class MavlinkConn:
                                pitch_limit=None,
                                throttle_limit: tuple[float, float] = None,
                                speed_limit: float | None = None):
-        attitude_data = self.recover_data("ATTITUDE")
-        throttle_data = self.recover_data("VFR_HUD")
+        attitude_data = self.recover_data("ATTITUDE")[0]
+        throttle_data = self.recover_data("VFR_HUD")[0]
 
         if attitude_data is not None and throttle_data is not None:
             roll = attitude_data["roll"] + droll
@@ -94,17 +97,21 @@ class MavlinkConn:
             # Target address of message stream (if message has target address fields). 0: Flight-stack default (recommended), 1: address of requestor, 2: broadcast.
         )
 
-    def recover_data(self, request_type) -> dict:
+    def recover_data(self, request_type) -> tuple[dict, bool]:
 
         # FIXME: Consider asynchronous receiving
         response = self._mavlink.recv_match(type=request_type)
 
         if response is not None:
             self._data[request_type] = response.to_dict()
-            return response.to_dict()
+            return response.to_dict(), True
 
         if request_type in self._data.keys():
-            return self._data[request_type]
+            return self._data[request_type], False
+
+        time.sleep(0.01)
+
+        return self.recover_data(request_type)
 
     def send_msg(self, txt: str, severity: int = 4):
         self._mavlink.mav.statustext_send(severity, txt.encode())
