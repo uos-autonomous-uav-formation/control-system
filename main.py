@@ -16,11 +16,12 @@ TARGET_DIST = 6
 TARGET_YAW = 13
 TARGET_PITCH = 0
 REF_THROTTLE = 0.5
-pos=10
+pos = 10
 atm_var1 = [1]
 atm_var2 = [1]
-reading_std = 0.4
-
+reading_std = 0.5
+n_mov = 10
+ideal_span_sep = 1.6
 
 # NOTE THIS IF IS MANDATORY!!!!! REMOVING IT WILL BREAK PARALELISM
 if __name__ == '__main__':
@@ -48,10 +49,13 @@ if __name__ == '__main__':
     def loop(img: np.ndarray) -> np.ndarray:
         global pitch, roll, mavlink, TARGET_YAW, TARGET_DIST, TARGET_DIST
 
+        start = time.time()
+
         leaders = cv.process(img)
 
         cv2.circle(img, center=(
-        int(img.shape[1] * xoff_from_angle(TARGET_YAW)), int(img.shape[0] * xoff_from_angle(TARGET_PITCH))), radius=10,
+            int(img.shape[1] * xoff_from_angle(TARGET_YAW)), int(img.shape[0] * xoff_from_angle(TARGET_PITCH))),
+                   radius=10,
                    color=(255, 0, 0), thickness=1)
 
         mavlink.send_heatbeat()
@@ -75,49 +79,55 @@ if __name__ == '__main__':
                 pitch = 8
                 throttle = 0
 
-            with open("flight.csv", "a") as f:
-                f.write(f"{mavlink.corrected_timestamp()},{aprox_dist},{dyaw_angle},{dpitch_angle},{pitch},{roll},{throttle},{leaders[0].confidence}\n")
-
             img = leaders[0].render(img)
 
-            mavlink.set_change_in_attitude(roll, pitch, 0, throttle + REF_THROTTLE, roll_limit=(-15, 6), throttle_limit=(0.1, 0.70))
+            mavlink.set_change_in_attitude(roll, pitch, 0, throttle + REF_THROTTLE, roll_limit=(-15, 6),
+                                           throttle_limit=(0.1, 0.70))
 
             # TODO: If on guided mode but don't detect leader for a long time switch flight mode to a safe one
 
-            # Aerodynamic Model -> Set follower on true heading of 0
-            # Aerodynamic Control
-            n_mov = 10 #Moving average points
-            reading_std = 0.5
-            ideal_span_sep = 1.6
 
-            print(aprox_dist)
+            try:
+                if aprox_dist < 15:
+                    state_array = np.zeros(4)
+                    statelist = []
 
-            if aprox_dist < 15:
-                state_array = np.zeros(4)
-                statelist = []
+                    start1 = time.time()
 
-                for i in range(5):
-                    #Used on the aircraft
-                    a_angle = mavlink.recover_data("ATTITUDE")[0]["pitch"]
-                    reading_l = model(sim)[0]
-                    reading_r = model(sim)[1]
-                    ave_l, ave_r, diff_ave=moving_ave(reading_l, reading_r, a_angle, n_mov)
-                    end = time.time()
-                if -(reading_std/2)<diff_ave<(reading_std/2) and -(reading_std/2)<ave_l<(reading_std/2) and -(reading_std/2)<ave_r<(reading_std/2): #to determine constraints if too far
-                    state = 1
-                elif diff_ave>(reading_std/2) and ave_l>(reading_std/2) and ave_r>0.1:
-                    state = 2
-                elif diff_ave< -(reading_std/2) and ave_l< -(reading_std/2) and ave_r>ave_l:
-                    state=3
-                else:
-                    state = 4
+                    for i in range(5):
+                        # Used on the aircraft
+                        a_angle = mavlink.recover_data("ATTITUDE")[0]["pitch"]
+                        reading_l = model(sim)[0]
+                        reading_r = model(sim)[1]
+                        ave_l, ave_r, diff_ave = moving_ave(reading_l, reading_r, a_angle, n_mov)
+                        end = time.time()
 
-                statelist.append(state)
-                state_array=state_count(statelist)
+                    time1 = time.time() - start1
 
-                TARGET_YAW=state_iden(state_array, TARGET_YAW, ave_l, ideal_span_sep)
+                    if -(reading_std / 2) < diff_ave < (reading_std / 2) and -(reading_std / 2) < ave_l < (
+                            reading_std / 2) and -(reading_std / 2) < ave_r < (
+                            reading_std / 2):  # to determine constraints if too far
+                        state = 1
+                    elif diff_ave > (reading_std / 2) and ave_l > (reading_std / 2) and ave_r > 0.1:
+                        state = 2
+                    elif diff_ave < -(reading_std / 2) and ave_l < -(reading_std / 2) and ave_r > ave_l:
+                        state = 3
+                    else:
+                        state = 4
 
+                    statelist.append(state)
+                    state_array = state_count(statelist)
 
+                    TARGET_YAW = state_iden(state_array, TARGET_YAW, ave_l, ideal_span_sep)
+            except Exception as e:
+                TARGET_YAW = 13
+                print("Exception occured")
+
+            with open("flight.csv", "a") as f:
+                f.write(
+                    f"{mavlink.corrected_timestamp()},{aprox_dist},{dyaw_angle},{dpitch_angle},{pitch},{roll},{throttle},{leaders[0].confidence},{TARGET_YAW},{ave_l},{ave_r},{diff_ave}\n")
+
+        print(time.time() - start - time1)
         # else:
         #     mavlink.set_change_in_attitude(0, 0, 0, REF_THROTTLE, roll_limit=(-15, 6), throttle_limit=(0.1, 0.65))
 
