@@ -34,7 +34,7 @@ class MultiplayerControl(Process):
         self._sim = Simulator()
 
         self._controller_alt = PID(-1, 0, 0, 0)
-        self._controller_roll = PID(-1, 0, 0, 0)
+        self._controller_roll = PID(-1, 0, 0.05, 0)
         self._controller_pitch = PID(-1, 0.3, 0, 0)
         self._controller_yaw = PID(-1, 0, 0, 0)
         self._sim.add_freq_value(DREFs.multiplayer.elev.format(self.id), 60)
