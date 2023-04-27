@@ -1,9 +1,9 @@
+from __future__ import annotations
 import cv2
 import numpy as np
 import time
 from . import MODEL_CFG_DIR, CLASSES
 from dataclasses import dataclass
-
 
 def load_img_from_file(filename: str):
     return cv2.imread(filename)
@@ -12,7 +12,7 @@ def load_img_from_file(filename: str):
 @dataclass
 # FIXME: Python dataclasses in Python 3.9 are not as optimum. Reconsider structure and storage of this information
 class Leader:
-    _scores: np.ndarray[float]
+    _scores = 0
     class_id: int
     confidence: float
     center_x_non_dimensional: float

@@ -1,5 +1,6 @@
 from multiprocessing import Process
 import numpy as np
+import time
 from .drefs import DREFs
 from .sim import Simulator
 from ..pid import PID
@@ -52,6 +53,7 @@ class MultiplayerControl(Process):
 
         while True:
             self._sim.update()
+            time.sleep(0.01)
 
             new_alt = self._sim.get(DREFs.multiplayer.elev.format(self.id))
             current_roll = self._sim.get(DREFs.multiplayer.opengl_roll.format(self.id))

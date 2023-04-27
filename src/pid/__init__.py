@@ -19,7 +19,7 @@ class PID(object):
     def set_target(self, new_target: float):
         self.target = new_target
 
-    def controller(self, pos: float, filter: float) -> float:
+    def controller(self, pos: float, filter: float = None) -> float:
         current_time = time.time()
 
         self.error = pos - self.target
