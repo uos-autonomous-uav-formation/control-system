@@ -45,7 +45,6 @@ def moving_ave(reading_l, reading_r, a_angle, n_mov):
     readings_r.append(reading_r)
     length2 = len(readings_r)
     ave_r = sum(readings_r)/length2
-    #print(readings_r)
     
     pdiff = ave_l-ave_r
     diff.append(pdiff)
@@ -118,16 +117,13 @@ def state_count(statelist):
 
 def state_iden(state_array, target_yaw, ave_l, ideal_span_sep):
     if state_array[0]>state_array[1] and state_array[0]>state_array[2] and state_array[0]>state_array[3]:
-        print('State 1')
         if target_yaw <= 12:
             target_yaw = 12
         else:
             target_yaw = target_yaw - 0.01
 
     if state_array[1]>state_array[0] and state_array[1]>state_array[2] and state_array[1]>state_array[3]:
-        print('State 2')
         loc1 = prob_loc1(ave_l)
-        print('position estimate', loc1+0.75)
         if (loc1+0.75)>ideal_span_sep:
             if target_yaw <= 12:
                 target_yaw = 12
@@ -140,24 +136,15 @@ def state_iden(state_array, target_yaw, ave_l, ideal_span_sep):
                 target_yaw = target_yaw + 0.005
         
     if state_array[2]>state_array[0] and state_array[2]>state_array[1] and state_array[2]>state_array[3]:
-        print('State 3')
         if target_yaw >= 15:
             target_yaw = 15
         else:
             target_yaw = target_yaw + 0.01
     
     if state_array[3]>state_array[1] and state_array[1]>state_array[0] and state_array[1]>state_array[2]:
-        print('State 4')
         if target_yaw > 14.5:
             target_yaw = target_yaw -0.005
         if target_yaw < 14.5:
             target_yaw = target_yaw +0.005
-    print(state_array)
-    #end = time.time()
-    #print('time taken =',f'{end-start:.3}','s')
-    #print('modelled position =', f'{pos}', 'm')
-    print('Target Yaw =', f'{target_yaw}','˚')
-
-        
     return target_yaw
         

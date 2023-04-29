@@ -75,20 +75,23 @@ class ObjectDetection:
         self.__net = cv2.dnn.readNet(MODEL_CFG_DIR, weights)
 
     def process(self, img: np.ndarray) -> list[Leader]:
+        start = time.time()
         height, width, _ = img.shape
 
         blob = cv2.dnn.blobFromImage(img, 1 / 255, (416, 416), (0, 0, 0), swapRB=True, crop=False)
         self.__net.setInput(blob)
 
-        layer_output = self.__net.forward(self.__net.getUnconnectedOutLayersNames())
+        self.layer_output = self.__net.forward(self.__net.getUnconnectedOutLayersNames())
+        # print(time.time() - start)
+
+
 
         leader_box: list[Leader] = []
 
-        for output in layer_output:
+        for output in self.layer_output:
             output = output[output[:, 5] > 0.1]
             for detection in output:
                 leader_box.append(Leader(detection, width, height))
-
 
         return leader_box
 

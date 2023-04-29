@@ -69,8 +69,6 @@ class MavlinkConn:
                 if throttle_data["airspeed"] > speed_limit:
                     dthrottle = throttle_data["throttle"]/100 - 0.01
 
-            print(f"{roll=}, {pitch=}, {dyaw=}, {dthrottle=}")
-
             self.set_attitude(roll, pitch, attitude_data["yaw"] + dyaw, dthrottle)
 
         else:

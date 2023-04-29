@@ -36,7 +36,7 @@ if __name__ == '__main__':
     mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD, 30)
     mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SYSTEM_TIME, 10)
 
-    cv = ObjectDetection(MODEL_WEIGTS_DIR_CESSNA)
+    cv = ObjectDetection(MODEL_WEIGTS_DIR_DRACO)
 
     throttle_controller = PID(0.006, 0.00004, 0, 0)
 
@@ -63,7 +63,6 @@ if __name__ == '__main__':
         mavlink.corrected_timestamp()
 
         if len(leaders) > 0:
-            # Translate computer vision to approximate positions
             aprox_dist = dist_from_width(leaders[0].width_non_dimensional)
             dyaw_angle = angle_from_xoff(leaders[0].center_x_non_dimensional)
             dpitch_angle = angle_from_xoff(leaders[0].center_y_non_dimensional)
@@ -76,23 +75,19 @@ if __name__ == '__main__':
             mavlink.send_float("2CVDIST", aprox_dist * 10)
 
             # Safety constrain
-            if aprox_dist < 4:
-                pitch = 8
-                throttle = 0
+            if aprox_dist < 4.5:
+                pitch = 5
+                throttle = 0.3
 
             img = leaders[0].render(img)
 
             mavlink.set_change_in_attitude(roll, pitch, 0, throttle + REF_THROTTLE, roll_limit=(-15, 6),
-                                           throttle_limit=(0.1, 0.70))
-
-            # TODO: If on guided mode but don't detect leader for a long time switch flight mode to a safe one
+                                           throttle_limit=(0.3, 0.70))
 
             try:
                 if aprox_dist < 15:
                     state_array = np.zeros(4)
                     statelist = []
-
-                    start1 = time.time()
 
                     for i in range(5):
                         # Used on the aircraft
@@ -101,8 +96,6 @@ if __name__ == '__main__':
                         reading_r = model(sim)[1]
                         ave_l, ave_r, diff_ave = moving_ave(reading_l, reading_r, a_angle, n_mov)
                         end = time.time()
-
-                    time1 = time.time() - start1
 
                     if -(reading_std / 2) < diff_ave < (reading_std / 2) and -(reading_std / 2) < ave_l < (
                             reading_std / 2) and -(reading_std / 2) < ave_r < (
@@ -133,9 +126,10 @@ if __name__ == '__main__':
                 f.write(
                     f"{mavlink.corrected_timestamp()},{aprox_dist},{dyaw_angle},{dpitch_angle},{pitch},{roll},{throttle},{leaders[0].confidence},{TARGET_YAW},{ave_l},{ave_r},{diff_ave}\n")
 
-
-        else:
-            print("Controller failed")
+            print("WORKED")
+        # else:
+            pass
+            # print("Controller failed")
 
         # print(time.time() - start - time1)
         # else:
