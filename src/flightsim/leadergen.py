@@ -63,7 +63,7 @@ class _Loader:
 
     def _gen_leader(self, aircraft: _aircraft) -> None:
         # Y is height, Z is north, X is east (units not the same)
-        self._sim.set(f"sim/operation/override/override_autopilot[{self._ldr_id}]", True)
+        # self._sim.set(f"sim/operation/override/override_autopilot[{self._ldr_id}]", True)
 
         self._sim.set(DREFs.multiplayer.opengl_hdg.format(self._ldr_id), aircraft.hdg)
         self._sim.set(DREFs.multiplayer.opengl_pitch.format(self._ldr_id), aircraft.pitch)
@@ -152,8 +152,7 @@ class Cone(_Loader):
         dist = random.randint(10 if "min_distance" not in self._args.keys() else self._args["min_distance"],
                               100 if "max_distance" not in self._args.keys() else self._args["max_distance"])
         leader = copy.copy(self._flw)
-
-        leader.y = self._flw.y + 35
+        leader.y = self._flw.y + 0
         leader.x = self._flw.x + dist * (self._flw.vx * np.cos(angle) - self._flw.vz * np.sin(angle))
         leader.z = self._flw.z + dist * (self._flw.vx * np.sin(angle) + self._flw.vz * np.cos(angle))
 

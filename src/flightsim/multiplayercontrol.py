@@ -1,34 +1,11 @@
-from copy import copy
 from multiprocessing import Process
-from .sim import Simulator
 import numpy as np
+import time
 from .drefs import DREFs
 from .sim import Simulator
+from ..pid import PID
 
 DIST_STEP = 0.01
-
-
-class _PID(object):
-    error: float = 0
-    integral_error: float = 0
-    error_last: float = 0
-    output: float = 0
-
-    def __init__(self, kp: float, ki: float, kd: float, target: float):
-        self.kp: float = kp
-        self.ki: float = ki
-        self.kd: float = kd
-        self.target: float = target
-
-    def controller(self, pos: float) -> float:
-        self.error = pos - self.target
-
-        self.integral_error += self.error * DIST_STEP
-        derivative_error = (self.error - self.error_last) / DIST_STEP
-        self.output = self.kp * self.error + self.ki*self.integral_error + self.kd * derivative_error
-        self.error_last = copy(self.error)
-
-        return self.output
 
 
 def _brng_from_vec(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -56,10 +33,10 @@ class MultiplayerControl(Process):
     def _start(self):
         self._sim = Simulator()
 
-        self._controller_alt = _PID(-1, 0, 0, 0)
-        self._controller_roll = _PID(-1, 0, 0, 0)
-        self._controller_pitch = _PID(-1, 0.3, 0, 0)
-        self._controller_yaw = _PID(-1, 0, 0, 0)
+        self._controller_alt = PID(-1, 0, 0, 0)
+        self._controller_roll = PID(-1, 0, -0.05, 0)
+        self._controller_pitch = PID(-1, 0.3, 0, 0)
+        self._controller_yaw = PID(-1, 0, 0, 0)
         self._sim.add_freq_value(DREFs.multiplayer.elev.format(self.id), 60)
         self._sim.add_freq_value(DREFs.multiplayer.opengl_roll.format(self.id), 60)
         self._sim.add_freq_value(DREFs.multiplayer.opengl_pitch.format(self.id), 60)
@@ -76,6 +53,7 @@ class MultiplayerControl(Process):
 
         while True:
             self._sim.update()
+            time.sleep(0.01)
 
             new_alt = self._sim.get(DREFs.multiplayer.elev.format(self.id))
             current_roll = self._sim.get(DREFs.multiplayer.opengl_roll.format(self.id))
