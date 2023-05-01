@@ -8,10 +8,18 @@ from src.controlsystem import dist_from_width, angle_from_xoff
 from src.mavlink import MavlinkConn, RASPI
 from picamera2 import Picamera2
 from libcamera import Transform
+from datetime import datetime
 from src.pid import PID
+from datarecord import mavlink_picture
 import time
 from src.aoa_sensor import *
 from src.vortex.Vortex import moving_ave, state_count, state_iden
+
+def print2(text: str):
+    text = f"{datetime.now().strftime('%d/%m/%Y, %H:%M:%S')}: {text}"
+    print(text)
+    with open("errorlog.txt", "a") as f:
+        f.write(text + "\n")
 
 TARGET_DIST = 6
 TARGET_YAW = 13
@@ -29,39 +37,49 @@ failed = 0
 if __name__ == '__main__':
     boot_time = time.time()
     # TODO: Start with the initial conditions when engaded
+    open('camera_frametime.txt', 'w').close()
 
     mavlink = MavlinkConn(RASPI)
     mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 2)
     mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD, 2)
     mavlink.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SYSTEM_TIME, 1)
     mavlink.corrected_timestamp()
-    print("Mavlink initiated")
+    print2("Mavlink initiated")
 
     picam2 = Picamera2()
-    camera_config = picam2.create_still_configuration(main={"size": (1280, 720)}, transform=Transform(180))
+    camera_config = picam2.create_still_configuration(main={"size": (1920,1080)}, transform=Transform(180))
     picam2.configure(camera_config)
     picam2.start()
-    print("Camera initiated")
+    print2("Camera initiated")
 
     spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
 
     aoa_r = AoaSensor(2, spi, board.D20, 5, AoA2_conf)
     aoa_l = AoaSensor(1, spi, board.D7, 5, AoA1_conf)
-    print("AoA sensors initiated")
+    print2("AoA sensors initiated")
 
     cv = ObjectDetection(MODEL_WEIGTS_DIR_DRACO)
     throttle_controller = PID(0.006, 0.00004, 0, 0)
-    print("Preflight checks complete, starting controller")
+    print2("Preflight checks complete, starting controller")
 
     while True:
+        print2(f"{datetime.now().strftime('%d/%m/%Y, %H:%M:%S')}: Running")
+        start = time.time()
         img = picam2.capture_array()
+        with open("camera_frametime.txt", "a") as f:
+            f.write(f"{(time.time() - start) * 2}")
 
+        job = mavlink_picture(mavlink, picam2)
         leaders = cv.process(img)
+        picam2.wait(job)
 
         mavlink.send_heatbeat()
         mavlink.corrected_timestamp()
 
         if len(leaders) > 0:
+            print2(f"{datetime.now().strftime('%d/%m/%Y, %H:%M:%S')}: Detected")
+
+            failed = 0
             # Translate computer vision to approximate positions
             aprox_dist = dist_from_width(leaders[0].width_non_dimensional)
             dyaw_angle = angle_from_xoff(leaders[0].center_x_non_dimensional)
@@ -125,13 +143,4 @@ if __name__ == '__main__':
             with open("flight.csv", "a") as f:
                 f.write(
                     f"{mavlink.corrected_timestamp()},{aprox_dist},{dyaw_angle},{dpitch_angle},{pitch},{roll},{throttle},{leaders[0].confidence},{TARGET_YAW},{ave_l},{ave_r},{diff_ave}\n")
-
-
-#        else:
-#            failed += 1
-
-#            if failed > 6:
-#                mavlink.set_change_in_attitude(1, 0, 0, REF_THROTTLE, roll_limit=(-15, 6), throttle_limit=(0.3, 0.65))
-#            else:
-#                mavlink.set_change_in_attitude(0, 0, 0, REF_THROTTLE, roll_limit=(-15, 6), throttle_limit=(0.3, 0.65))
 
