@@ -17,6 +17,8 @@ class MavlinkConn:
     def __init__(self, device: str):
         self._mavlink = mavutil.mavlink_connection(device, baud=57600, source_system=2)
         self.boot_time = time.time()
+        self._mavlink.target_system = 1
+        self._mavlink.target_component = 1
 
     def corrected_timestamp(self):
         depoch, was_updated = self.recover_data("SYSTEM_TIME")
